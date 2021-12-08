@@ -1,5 +1,8 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
+#from __future__ import absolute_import, division, print_function
+#from builtins import str, open, range, dict
+#from builtins import *
 
 """
 This file is part of librelight.
@@ -34,6 +37,30 @@ import json
 
 import curses
 
+from collections import OrderedDict
+
+class CursesDummy():
+    def __init__(self):
+        pass
+    def test(self):
+        pass
+    def init(self):
+        pass
+    def addstr(self,x,y,txt):
+        pass
+    def draw_lines(self,lines):
+        pass
+    def inp(self):
+        return ""
+        pass
+    def read(self):
+        pass
+    def clear(self):
+        pass
+    def exit(self):
+        pass
+
+
 class Curses():
     def __init__(self):
 
@@ -41,7 +68,8 @@ class Curses():
         print( dir(self.myscreen))
         print( self.myscreen.getmaxyx() ) 
         self._inp=""
-
+    def dir(self):
+        return dir(self.myscreen)
     def test(self):
         self.init()
         #self.loop()
@@ -69,19 +97,24 @@ class Curses():
         
         self.clear()
         try:
+            x,y= self.myscreen.getmaxyx()
             for i,l in enumerate(lines):
                 #print(i,l)
-                if i >= self.myscreen.getmaxyx()[0]-2:
+                if i >= x-2:
                     break
                 self.myscreen.addstr(i+1, 1, l ) #zeile,spalte,text
 
             if i >= self.myscreen.getmaxyx()[0]-2:
                 self.myscreen.addstr(i+1, 1, "..." ) #zeile,spalte,text
             self.myscreen.refresh()
+            self.myscreen.resize(x-1,y-1) # to prevent slowdown..
+            self.myscreen.resize(x,y)
+
+            
 
         except KeyboardInterrupt as e:
             self.exit()
-            print "KeyboardInterrupt"
+            print("KeyboardInterrupt")
             raise e
         #except Exception as e:
         #    self.exit()
@@ -222,6 +255,7 @@ class xUniversum():
         return self.__universes_info
     def hosts(self):
         x = self.__universes_dmx.keys()
+        x=list(x)
         x.sort()
         return x
 
@@ -229,7 +263,7 @@ class xUniversum():
 class Hosts():
     def __init__(self):
         self.__hosts = [] # LTP order
-        self.__universes = {} # 192.168.0.1 = [0]*512
+        self.__universes = OrderedDict() # {} # 192.168.0.1 = [0]*512
         #self.update(host="localhost",univ=0,dmxframe=[6]*512)
         dmxframe = [0]*512
         dmxframe[15] = 6
@@ -254,7 +288,8 @@ class Hosts():
         return hosts
     def univs(self):
         x=self.__universes.keys()
-        x.sort()
+        x=list(x)
+        #x.sort()
         return x
 
     def update(self,host,univ, dmxframe):
@@ -297,14 +332,14 @@ class Xsocket():
                 self.__poll = 1
                 return 1
 
-            except socket.timeout, e:
+            except socket.timeout as e:
                 err = e.args[0]
                 if err == 'timed out':
                     sleep(1)
-                    print 'recv timed out, retry later'
+                    print('recv timed out, retry later')
                 else:
-                    print e
-            except socket.error, e:
+                    print(e)
+            except socket.error as e:
                 pass
     
     def recive(self):
@@ -315,10 +350,13 @@ class Xsocket():
 def unpack_art_dmx(data):
     dmx = []
     for i in range(len(data[18:]) ):
-        #try:
-        dmx += [struct.unpack('!B',data[18+i])[0]]
-        #except:
-        #    pass
+        x=data[18+i]
+        #print("x",x)
+        #print( "data",b'!B', data[18+i])
+        #x=struct.unpack( b'!B',data[18+i])
+        #print( "data",b'!B', data[18+i],x)
+        #x=x[0]
+        dmx += [x]
     return dmx
 
 class Pager(): #scroll thru list
@@ -370,17 +408,17 @@ class Pager(): #scroll thru list
 
 if __name__ == "__main__":
     frames = [0]*10000
-    print frames
+    print("frame",frames)
     ohost = Hosts()
     try:
-        print "connecting to ArtNet Port 6454"
+        print("connecting to ArtNet Port 6454")
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         
         sock.bind(('', 6454))
         fcntl.fcntl(sock, fcntl.F_SETFL, os.O_NONBLOCK)
         
     except socket.error as e:
-        print "Socket 6454 ", "ERR: {0} ".format(e.args)
+        print("Socket 6454 ", "ERR: {0} ".format(e.args))
         #raw_input()
         #sys.exit()
 
@@ -406,6 +444,7 @@ if __name__ == "__main__":
     dmx_ch_buffer = []
     
     screen=Curses()
+    #screen=CursesDummy()
     #screen.init()
     screen.exit()
     if 0: #testunivers
@@ -451,6 +490,8 @@ if __name__ == "__main__":
                     continue
                 
                 head_uni = head[6]/255 # /512  # * 512
+                head_uni = int(head_uni)
+                #print("head_uni", head_uni)
                 if head_uni < len(frames):# and len(data) == 530:
                     frames[head_uni] += 1 
                 host = addr[0]
@@ -541,6 +582,7 @@ if __name__ == "__main__":
             if time.time()-0.12 > ttime:
 
                 lines = [ ]
+                #print("cmd:",cmd)
                 lines.append(" CMD:" + "".join(cmd) )
                 if mode=="help" or  mode=="?":
                     lines.append("HILFE[h]: " )
@@ -652,7 +694,12 @@ if __name__ == "__main__":
             time.sleep(.001)
     finally:
         screen.exit()
-        print( sel_host.index,sel_host.data)
+        #print(dir(screen))
+        #print("###")
+        #print(screen.dir())
+        #print("###")
+        #print(dir(curses))
+        print( "finally",sel_host.index,sel_host.data)
 
 
 
