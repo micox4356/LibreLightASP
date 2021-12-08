@@ -132,22 +132,24 @@ class xUniversum():
         self.__universes_x_time = {}
         self.__universes_count = {}
         self.__universes_timer = {} 
+        self.__universes_matrix = ["."]*512 
         self.__universes_info = {}
         self.__univers_nr = univers_nr   
         self.__frame = 0
     def _add(self,host):
         if host not in self.__hosts:
+            self.__hosts.append(host) #re-order hosts list for LTP
             #print( "ADDING HOST:",host,"UNIV:",self.__univers_nr)
-            self.__universes_dmx[host] = ["ini"]*512
+            self.__universes_dmx[host] = [0]*512
             self.__universes_frames[host] = 0
             self.__universes_x_frames[host] = 0
-            self.__universes_fps[host] = [99]*20
+            self.__universes_fps[host] = [""]*20
             self.__universes_flag[host] = [0]*20
             self.__universes_x_time[host] = time.time()
             self.__universes_timer[host] = [0]*512 
             self.__universes_info[host] = {} 
 
-    def _next_frame(self):
+    def _next_frame(self,host):
         self.__frame += 1
         self.__universes_frames[host] += 1
         self.__universes_x_frames[host] += 1
@@ -160,7 +162,7 @@ class xUniversum():
             self.__universes_fps[host].append(fps)
             self.__universes_x_time[host] = time.time()
             self.__universes_x_frames[host] = 0
-
+        
     def update(self,host,dmxframe):
         if type(dmxframe) != list:
             #print( "update ERROR dmxframe is not a list", host )
@@ -168,27 +170,18 @@ class xUniversum():
 
         self._add(host)
 
-        while host in self.__hosts:
-            self.__hosts.remove(host)
-        self.__hosts.append(host) #re-order hosts list for LTP
-        #print("U",host,self.__hosts)
-        #print( len(dmxframe),len([0]*512), dmxframe[:10] )
-
         update_matrix = [0]*512
-        dmx=["non"]*512
+        dmx=[0]*512
         update_flag = 0
         dmxframe_old = self.__universes_dmx[host]
-        #for i in dmxframe_old:
-        #    dmx[i] = dmxframe_old[i]
 
-        self._next_frame()
+        self._next_frame(host)
 
         if len(dmxframe) <= 512: #len(dmxframe_old):
             for i,v in enumerate(dmxframe):
                 if dmxframe[i] != dmxframe_old[i]:
-                    #print( i,v, self.__frame)
-                    update_matrix[i] = self.__frame #LTP timing
                     update_flag += 1
+                    self.__universes_matrix[i] = self.__hosts.index(host)
                 dmx[i] = v
         
         self.__universes_flag[host].pop(0)
@@ -210,36 +203,20 @@ class xUniversum():
 
     def get(self,host=""):
 
-        dmx = ["-"]*512
-        timer = [0]*512
-        #print( "H",self.__hosts,self.__univers_nr )
         if host and host in self.__hosts:
             return self.__universes_dmx[host]
 
-        for host in self.__hosts: # <- LTP 
-            #print( host )
-            dmxA   = self.__universes_dmx[host]
-            timerA = self.__universes_timer[host]
-            for i,t in enumerate(timerA):
-                if timer[i] < t:
-                    timer[i] = timerA[i]
-                    dmx[i] = dmxA[i]
+            
+        dmx = [":"]*512
+        for i,v in enumerate(self.__universes_matrix):
+            if type(v) is int:
+                host = self.__hosts[v]
+                v = self.__universes_dmx[host][i]
+                dmx[i] = v
         return dmx
     def get_mtx(self,host=""):
+        return self.__universes_matrix
 
-        dmx = ["--"]*512
-        timer = [0]*512
-        hosts = self.__hosts[:]
-        hosts.sort()
-        for x,host in enumerate(hosts): # <- LTP 
-            #print( host )
-            dmxA   = self.__universes_dmx[host]
-            timerA = self.__universes_timer[host]
-            for i,t in enumerate(timerA):
-                if timer[i] < t:
-                    timer[i] = timerA[i]
-                    dmx[i] = x #dmxA[i]
-        return dmx
 
     def info(self):
         return self.__universes_info
@@ -254,14 +231,17 @@ class Hosts():
         self.__hosts = [] # LTP order
         self.__universes = {} # 192.168.0.1 = [0]*512
         #self.update(host="localhost",univ=0,dmxframe=[6]*512)
-        #dmxframe = [0]*512
-        #dmxframe[15] = 6
+        dmxframe = [0]*512
+        dmxframe[15] = 6
         #self.update(host="333.333.333.333",univ=8,dmxframe=dmxframe)
 
     def get_mtx(self,host="", univ=""):
         return self.__universes[str(univ)].get_mtx(host)
     def get(self,host="", univ=""):
-        return self.__universes[str(univ)].get(host)
+        if str(univ) in self.__universes:
+             return self.__universes[str(univ)].get(host)
+        else:
+             return [-8]*512
     def hosts(self):
         hosts = []
         for univ in  self.__universes:
@@ -452,7 +432,9 @@ if __name__ == "__main__":
     sel_mode.wrap=1
     sel_mode.data = ["dmx","ltp","mtx","main"] # mtx = matrix
     sel_mode.maxindex = len( sel_mode.data )-1
-
+    head_uni=""
+    dmx = []
+    headlines = ""
     try:
         while 1:
             dmx = univ_dmx[univers]
@@ -556,7 +538,7 @@ if __name__ == "__main__":
 
             mode  = sel_mode.get()
 
-            if time.time()-0.2 > ttime:
+            if time.time()-0.12 > ttime:
 
                 lines = [ ]
                 lines.append(" CMD:" + "".join(cmd) )
