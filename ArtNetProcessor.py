@@ -32,6 +32,20 @@ import os
 
 import json
 
+from optparse import OptionParser
+parser = OptionParser()
+parser.add_option("-r", "--recive", dest="recive",
+                  help="set recive ip")
+parser.add_option("-s", "--sendto", dest="sendto",
+                  help="set sender ip")
+#parser.add_option("-q", "--quiet",
+#                  action="store_false", dest="verbose", default=True,
+#                  help="don't print status messages to stdout")
+
+(options, args) = parser.parse_args()
+print("option",options)
+print(options.sendto)
+
 
 from collections import OrderedDict
 
@@ -69,284 +83,6 @@ class CursesDummy():
         pass
 
 
-class Curses():
-    def __init__(self):
-
-        self.myscreen = curses.initscr()
-        print( dir(self.myscreen))
-        print( self.myscreen.getmaxyx() ) 
-        self._inp=""
-        self.ttime = time.time()
-    def dir(self):
-        return dir(self.myscreen)
-    def test(self):
-        self.init()
-        #self.loop()
-        self.draw_lines(["a","b","c"])
-        try:
-            time.sleep(10)
-        finally:
-            self.exit()
-
-    def init(self):
-        curses.savetty()
-        curses.noecho()
-        curses.cbreak() 
-        curses.noqiflush() #?
-        curses.noraw() #?
-        self.clear()
-        curses.beep()
-
-        frame = 10
-        i = 0
-    def addstr(self,x,y,txt):
-        self.myscreen.addstr(x, y, txt ) #zeile,spalte,text
-    
-    def draw_lines(self,lines):
-        
-        self.clear()
-        try:
-            x,y= self.myscreen.getmaxyx()
-            for i,l in enumerate(lines):
-                #print(i,l)
-                if i >= x-2:
-                    break
-                self.myscreen.addstr(i+1, 1, l ) #zeile,spalte,text
-
-            if i >= self.myscreen.getmaxyx()[0]-2:
-                self.myscreen.addstr(i+1, 1, "..." ) #zeile,spalte,text
-            self.myscreen.refresh()
-            self.myscreen.resize(x-1,y-1) # to prevent slowdown..
-            self.myscreen.resize(x,y)
-
-            
-
-        except KeyboardInterrupt as e:
-            self.exit()
-            print("KeyboardInterrupt")
-            raise e
-        #except Exception as e:
-        #    self.exit()
-        #    raise e
-    def inp(self):
-        x= self._inp
-        self._inp=""
-        return x
-    def read(self):
-        self.myscreen.nodelay(1)
-
-        try:
-            self._inp=self.myscreen.getkey()
-
-            if not self._inp:
-                self._inp = self.myscreen.getch()
-            self.myscreen.addstr(0, 1, str(self._inp) ) #zeile,spalte,text
-            self.myscreen.refresh()
-            return self._inp
-        except:
-            pass#self._inp=""
-
-    def clear(self):
-        self.myscreen.clear()
-        self.myscreen.border(0)
-        curses.nocbreak();
-        self.myscreen.keypad(0);
-        #self.read()
-        curses.echo()
-        curses.resetty()
-        #self.myscreen.addstr(10, 2, x ) #zeile,spalte,text
-
-    def exit(self):
-        self.clear()
-        curses.endwin()
-        print("ENDE",self)
-    def keyread(self):
-        #continue
-        # input command buffer
-        self.read()
-        inp2=self.inp()
-        if "q" == inp2:
-            inp2=""
-            self.exit()
-            sys.exit()
-        elif "?" == inp2:
-            self.mode = "?"
-        elif "," == inp2:
-            self.sel_mode.next()
-            inp2=""
-        elif ";" == inp2:
-            self.sel_mode.prev()
-            inp2=""
-        elif "." == inp2:
-            self.sel_univ.next()
-            inp2=""
-        elif ":" == inp2:
-            self.sel_univ.prev()
-            inp2=""
-        elif "-" == inp2:
-            self.sel_host.next()
-            inp2=""
-        elif "_" == inp2:
-            self.sel_host.prev()
-            inp2=""
-        elif "#" == inp2:
-            if "main" in self.sel_mode.data:
-                x = self.sel_mode.data.index( "main")
-                self.sel_mode.index = x
-                self.sel_mode.check()
-            inp2=""
-
-        if inp2 == "\n":
-            cmd2 = "".join( self.cmd).split()
-            self.cmd=[]
-            if len(cmd2) < 2:
-                pass
-            elif "C^" in cmd2:
-                screen.exit()
-                sys.exit()
-            elif "univ" in cmd2 or "u" == cmd2[0]:
-                x=""
-                if cmd2[1] in sel_univ.data:
-                    x = sel_univ.data.index( cmd2[1])
-                    sel_univ.index = x
-                    sel_univ.check()
-            elif "mode" in cmd2 or "m" == cmd2[0]:
-                if cmd2[1] in self.sel_mode.data:
-                    x = self.sel_mode.data.index( cmd2[1])
-                    self.sel_mode.index = x
-                    self.sel_mode.check()
-
-            elif "host" in cmd2 or "h" == cmd2[0]:
-                try:
-                    x=int(cmd2[1]) 
-                    self.sel_host.set(x)
-                except:
-                    pass
-        else:
-            self.cmd.append(inp2)
-
-
-    def loop(self):
-        
-        self.keyread()
-        #print( "LOOP")
-        host  = self.sel_host.get()
-        univ2 = self.sel_univ.get()
-
-        self.mode  = self.sel_mode.get()
-
-        if time.time()-0.12 > self.ttime:
-
-            lines = [ ]
-            #print("cmd:",cmd)
-            lines.append(" CMD:" + "".join(self.cmd) )
-            if self.mode=="help" or  self.mode=="?":
-                lines.append("HILFE[h]: " )
-                lines.append("MODE [m]: inp, in2 in1 " )
-                lines.append("UNIV [u]: 0-16  " )
-                lines.append(" " )
-                lines.append("HILFE " )
-            elif self.mode=="dmx" or self.mode == "DMX":
-                self.ttime = time.time()
-                dmx=self.ohost.get(host,univ=univ2)#univ=head_uni)
-                info=self.ohost.info()
-                #lines.append("frame "+str(info.keys()) )
-
-                if univ2 in info:
-                    if host in info[univ2] :
-                        lines.append("frame "+str(info[univ2][host]["frame"]))
-                        x=""
-                        for i,v in enumerate(dmx):
-                            if v == 0:
-                                v = "+"
-                            x += str(v).rjust(4," ")
-                            if (i+1) % 20 == 0:# and i:
-                                lines.append(x)
-                                x=""
-                        if x:
-                            lines.append(x)
-                                
-                        lines.append(" ")
-                        lines.append(str(self.ttime))
-
-                #screen.draw_lines(lines)
-            elif self.mode=="mtx":
-                self.ttime = time.time()
-                dmx=self.ohost.get_mtx(host,univ=univ2)#univ=head_uni)
-                info=self.ohost.info()
-                #lines.append("frame "+str(info.keys()) )
-
-                if univ2 in info:
-                    if host in info[univ2] :
-                        lines.append("frame "+str(info[univ2][host]["frame"]))
-                        x=""
-                        for i,v in enumerate(dmx):
-                            x += str(v).rjust(4," ")
-                            if (i+1) % 20 == 0:# and i:
-                                lines.append(x)
-                                x=""
-                        if x:
-                            lines.append(x)
-                                
-                        lines.append(" ")
-                        lines.append(str(self.ttime))
-
-                #screen.draw_lines(lines)
-            elif self.mode=="ltp" or self.mode=="LTP":
-                self.ttime = time.time()
-                dmx=self.ohost.get(univ=univ2)#head_uni)
-                #univ2=""
-                host=""
-                info=self.ohost.info()
-                lines.append("frame "+str(info.keys()) )
-
-                x=""
-                for i,v in enumerate(dmx):
-                    x += str(v).rjust(4," ")
-                    if (i+1) % 20 == 0:
-                        lines.append(x)
-                        x=""
-                if x:
-                    lines.append(x)
-                        
-                lines.append(" ")
-                lines.append(str(self.ttime))
-
-                #screen.draw_lines(lines)
-            else:
-                self.ttime = time.time()
-                x=self.ohost.get(univ=univ2)
-                #lines = []
-                host=""
-                univ2=""
-                info=self.ohost.info()
-                jinfo = ""
-                for i in info:
-                    xl = json.dumps(i) + "======= "
-                    lines.append( xl )
-                    for j in info[i]:
-                        lines.append( " " + json.dumps([j,""]) )
-                        if j not in self.sel_host.data:
-                            pass#sel_host.append(j)
-                        for k in info[i][j]:
-                            #lines.append( "   " + json.dumps( info[i][j]) )
-                            lines.append( "   "+str(k).ljust(5," ")+": " + json.dumps( info[i][j][k]) )
-                        
-                lines.append(" ")
-                lines.append(str(self.ttime))
-
-                #screen.draw_lines(lines)
-            tmp = ""
-            tmp += " mode:"+(str(self.mode).ljust(10," "))
-            tmp += " univ:"+str(self.sel_univ.index)+":"+(str(self.sel_univ.get()).ljust(10," "))
-            tmp += " host:"+str(self.sel_host.index)+":"+(str(self.sel_host.get()).ljust(10," "))
-            lines.insert(0,tmp)
-
-            tmp = ""
-            tmp += " univ:"+ (str(self.sel_univ.data))#.ljust(20," "))
-            tmp += " list:"+ (str(self.sel_host.data))#.ljust(20," "))
-            lines.insert(0,tmp)
-            self.draw_lines(lines)
 
 
 
@@ -616,15 +352,21 @@ class Manager():
                 info=self.ohost.info()
                 jinfo = ""
                 for i in info:
-                    xl = json.dumps(i) + "======= "
+                    xl = json.dumps(i) + "=======X " # live
                     lines.append( xl )
                     for j in info[i]:
+                        lines2=[]
                         lines.append( " " + json.dumps([j,""]) )
-                        if j not in self.sel_host.data:
-                            pass#sel_host.append(j)
+
                         for k in info[i][j]:
-                            #lines.append( "   " + json.dumps( info[i][j]) )
-                            lines.append( "   "+str(k).ljust(5," ")+": " + json.dumps( info[i][j][k]) )
+                            if k in ["fpsx","uni","flag"]:
+                                lines2.append( "   "+str(k).ljust(5," ")+": " + json.dumps( info[i][j][k]) )
+                            else:
+                                lines.append( "   "+str(k).ljust(5," ")+": " + json.dumps( info[i][j][k]) )
+
+                        lines2 = "".join(lines2)
+                        lines.append(lines2)
+                        lines.append( " " + json.dumps([j,""]) )
                         
                 lines.append(" ")
                 lines.append(str(self.ttime))
@@ -854,7 +596,6 @@ class Socket():
                 self.__data, self.__addr = self.sock.recvfrom(6454)
 
 
-                self.__poll = 1
                 data, addr = (self.__data,self.__addr)
                 self.host = addr[0]
                 head    = data[:18]
@@ -868,8 +609,11 @@ class Socket():
                 univ = self.head[6]/255 # /512  # * 512
                 self.univ = int(univ)
 
-                if self.host.startswith("10.10.10"):
-                    #print( self.host )
+                if not options.recive:
+                    self.__poll = 1
+                    return 1
+                elif self.host.startswith(options.recive): 
+                    self.__poll = 1
                     return 1
                 else:
                     self.__poll = 0
@@ -1052,16 +796,16 @@ class Main():
         screen.ohost = ohost
                 
         #artnet_out = ArtNetNode(to="10.0.25.255")
-        artnet_out = ArtNetNode(to="2.255.255.255")
+        artnet_out = ArtNetNode(to=options.sendto)
         #artnet_out._test_frame()
-        artnet = ArtNetNode()
-        artnet._test_frame()
+        #artnet = ArtNetNode()
+        #artnet._test_frame()
         xsocket = Socket()
 
         send_time = time.time()
         try:
             while 1:
-                artnet._test_frame()
+                #artnet._test_frame()
                 #artnet_out._test_frame()
                 if xsocket.poll():
                     x = xsocket.recive()
@@ -1070,7 +814,8 @@ class Main():
                 screen.sel_univ.data = ohost.univs()
                 screen.sel_host.data = ohost.hosts()
 
-                if send_time +(1/30.) < time.time():
+                if send_time +(1/30.) < time.time() and options.sendto:
+
                     send_time = time.time()
                     #x=ohost.get(univ=univ2)
                     info=ohost.info()
@@ -1080,7 +825,7 @@ class Main():
                         #print( [ univ])
                         if str(univ) == "54":
                             break
-                        xl = json.dumps(univ) + "======= "
+                        xl = json.dumps(univ) + "======= " #XX
                         ltp=ohost.get(univ=i)
                         
                         #print( xl )
