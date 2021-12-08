@@ -30,17 +30,25 @@ import string
 import time
 import os
 
-import socket, struct
-import fcntl  #socket control
-import errno
 import json
 
-import curses
 
 from collections import OrderedDict
 
+# ============================================================   
+# Text Grafik Curses =========================================   
+# ============================================================   
+import curses
 class CursesDummy():
     def __init__(self):
+        self.sel_host=Pager()
+        self.sel_host.wrap=1
+        self.sel_univ=Pager()
+        self.sel_univ.wrap=1
+        self.sel_mode=Pager()
+        self.sel_mode.wrap=1
+        pass
+    def dir(self):
         pass
     def test(self):
         pass
@@ -68,6 +76,20 @@ class Curses():
         print( dir(self.myscreen))
         print( self.myscreen.getmaxyx() ) 
         self._inp=""
+        self.cmd = []
+        self.mode="ltp"
+        self.sel_host=Pager()
+        self.sel_host.wrap=1
+        self.sel_univ=Pager()
+        self.sel_univ.wrap=1
+        self.sel_mode=Pager()
+        self.sel_mode.wrap=1
+        self.sel_mode.data = ["dmx","ltp","mtx","main"] # mtx = matrix
+        self.sel_mode.maxindex = len( self.sel_mode.data )-1
+        self.ttime = time.time()
+        self.univ2 = 0
+        self.host =""
+        self.ohost = Hosts() # as default
     def dir(self):
         return dir(self.myscreen)
     def test(self):
@@ -151,11 +173,200 @@ class Curses():
         self.clear()
         curses.endwin()
         print("ENDE")
+    def keyread(self):
+        #continue
+        # input command buffer
+        self.read()
+        inp2=self.inp()
+        if "q" == inp2:
+            inp2=""
+            self.exit()
+            sys.exit()
+        elif "?" == inp2:
+            self.mode = "?"
+        elif "," == inp2:
+            self.sel_mode.next()
+            inp2=""
+        elif ";" == inp2:
+            self.sel_mode.prev()
+            inp2=""
+        elif "." == inp2:
+            self.sel_univ.next()
+            inp2=""
+        elif ":" == inp2:
+            self.sel_univ.prev()
+            inp2=""
+        elif "-" == inp2:
+            self.sel_host.next()
+            inp2=""
+        elif "_" == inp2:
+            self.sel_host.prev()
+            inp2=""
+        elif "#" == inp2:
+            if "main" in self.sel_mode.data:
+                x = self.sel_mode.data.index( "main")
+                self.sel_mode.index = x
+                self.sel_mode.check()
+            inp2=""
+
+        if inp2 == "\n":
+            cmd2 = "".join( self.cmd).split()
+            self.cmd=[]
+            if len(cmd2) < 2:
+                pass
+            elif "C^" in cmd2:
+                screen.exit()
+                sys.exit()
+            elif "univ" in cmd2 or "u" == cmd2[0]:
+                x=""
+                if cmd2[1] in sel_univ.data:
+                    x = sel_univ.data.index( cmd2[1])
+                    sel_univ.index = x
+                    sel_univ.check()
+            elif "mode" in cmd2 or "m" == cmd2[0]:
+                if cmd2[1] in self.sel_mode.data:
+                    x = self.sel_mode.data.index( cmd2[1])
+                    self.sel_mode.index = x
+                    self.sel_mode.check()
+
+            elif "host" in cmd2 or "h" == cmd2[0]:
+                try:
+                    x=int(cmd2[1]) 
+                    self.sel_host.set(x)
+                except:
+                    pass
+        else:
+            self.cmd.append(inp2)
+
+
+    def loop(self):
+        
+        self.keyread()
+        #print( "LOOP")
+        host  = self.sel_host.get()
+        univ2 = self.sel_univ.get()
+
+        self.mode  = self.sel_mode.get()
+
+        if time.time()-0.12 > self.ttime:
+
+            lines = [ ]
+            #print("cmd:",cmd)
+            lines.append(" CMD:" + "".join(self.cmd) )
+            if self.mode=="help" or  self.mode=="?":
+                lines.append("HILFE[h]: " )
+                lines.append("MODE [m]: inp, in2 in1 " )
+                lines.append("UNIV [u]: 0-16  " )
+                lines.append(" " )
+                lines.append("HILFE " )
+            elif self.mode=="dmx" or self.mode == "DMX":
+                self.ttime = time.time()
+                dmx=self.ohost.get(host,univ=univ2)#univ=head_uni)
+                info=self.ohost.info()
+                #lines.append("frame "+str(info.keys()) )
+
+                if univ2 in info:
+                    if host in info[univ2] :
+                        lines.append("frame "+str(info[univ2][host]["frame"]))
+                        x=""
+                        for i,v in enumerate(dmx):
+                            if v == 0:
+                                v = "+"
+                            x += str(v).rjust(4," ")
+                            if (i+1) % 20 == 0:# and i:
+                                lines.append(x)
+                                x=""
+                        if x:
+                            lines.append(x)
+                                
+                        lines.append(" ")
+                        lines.append(str(self.ttime))
+
+                #screen.draw_lines(lines)
+            elif self.mode=="mtx":
+                self.ttime = time.time()
+                dmx=self.ohost.get_mtx(host,univ=univ2)#univ=head_uni)
+                info=self.ohost.info()
+                #lines.append("frame "+str(info.keys()) )
+
+                if univ2 in info:
+                    if host in info[univ2] :
+                        lines.append("frame "+str(info[univ2][host]["frame"]))
+                        x=""
+                        for i,v in enumerate(dmx):
+                            x += str(v).rjust(4," ")
+                            if (i+1) % 20 == 0:# and i:
+                                lines.append(x)
+                                x=""
+                        if x:
+                            lines.append(x)
+                                
+                        lines.append(" ")
+                        lines.append(str(self.ttime))
+
+                #screen.draw_lines(lines)
+            elif self.mode=="ltp" or self.mode=="LTP":
+                self.ttime = time.time()
+                dmx=self.ohost.get(univ=univ2)#head_uni)
+                #univ2=""
+                host=""
+                info=self.ohost.info()
+                lines.append("frame "+str(info.keys()) )
+
+                x=""
+                for i,v in enumerate(dmx):
+                    x += str(v).rjust(4," ")
+                    if (i+1) % 20 == 0:
+                        lines.append(x)
+                        x=""
+                if x:
+                    lines.append(x)
+                        
+                lines.append(" ")
+                lines.append(str(self.ttime))
+
+                #screen.draw_lines(lines)
+            else:
+                self.ttime = time.time()
+                x=self.ohost.get(univ=head_uni)
+                #lines = []
+                host=""
+                univ2=""
+                info=self.ohost.info()
+                jinfo = ""
+                for i in info:
+                    xl = json.dumps(i) + "======= "
+                    lines.append( xl )
+                    for j in info[i]:
+                        lines.append( " " + json.dumps([j,""]) )
+                        if j not in self.sel_host.data:
+                            pass#sel_host.append(j)
+                        for k in info[i][j]:
+                            #lines.append( "   " + json.dumps( info[i][j]) )
+                            lines.append( "   "+str(k).ljust(5," ")+": " + json.dumps( info[i][j][k]) )
+                        
+                lines.append(" ")
+                lines.append(str(self.ttime))
+
+                #screen.draw_lines(lines)
+            tmp = ""
+            tmp += " mode:"+(str(self.mode).ljust(10," "))
+            tmp += " univ:"+str(self.sel_univ.index)+":"+(str(self.sel_univ.get()).ljust(10," "))
+            tmp += " host:"+str(self.sel_host.index)+":"+(str(self.sel_host.get()).ljust(10," "))
+            lines.insert(0,tmp)
+
+            tmp = ""
+            tmp += " univ:"+ (str(self.sel_univ.data))#.ljust(20," "))
+            tmp += " list:"+ (str(self.sel_host.data))#.ljust(20," "))
+            lines.insert(0,tmp)
+            self.draw_lines(lines)
 
 
 
 class xUniversum():
     def __init__(self,univers_nr=0):
+        """buffer and merge a universe from multiple sender
+        """
         self.__hosts = []
         self.__universes_dmx = {}
         self.__universes_fps = {}
@@ -260,8 +471,10 @@ class xUniversum():
         return x
 
 
-class Hosts():
+class Hosts(): 
     def __init__(self):
+        """buffer hosts and route data into universes
+        """
         self.__hosts = [] # LTP order
         self.__universes = OrderedDict() # {} # 192.168.0.1 = [0]*512
         #self.update(host="localhost",univ=0,dmxframe=[6]*512)
@@ -308,7 +521,12 @@ class Hosts():
             out[univ] = x.info()
         return out 
 
-    
+# ============================================================   
+# Network ====================================================   
+# ============================================================   
+import socket, struct
+import fcntl  #socket control
+import errno
 def toPrintable(nonprintable):
     out = ""
     
@@ -317,6 +535,18 @@ def toPrintable(nonprintable):
         if str(i) in printable :
             out += str(i)
     return out
+
+def unpack_art_dmx(data):
+    dmx = []
+    for i in range(len(data[18:]) ):
+        x=data[18+i]
+        #print("x",x)
+        #print( "data",b'!B', data[18+i])
+        #x=struct.unpack( b'!B',data[18+i])
+        #print( "data",b'!B', data[18+i],x)
+        #x=x[0]
+        dmx += [x]
+    return dmx
 
         
 class Xsocket():
@@ -347,18 +577,6 @@ class Xsocket():
             self.__poll = 0
             return (self.__data,self.__addr)
         
-def unpack_art_dmx(data):
-    dmx = []
-    for i in range(len(data[18:]) ):
-        x=data[18+i]
-        #print("x",x)
-        #print( "data",b'!B', data[18+i])
-        #x=struct.unpack( b'!B',data[18+i])
-        #print( "data",b'!B', data[18+i],x)
-        #x=x[0]
-        dmx += [x]
-    return dmx
-
 class Pager(): #scroll thru list
     def __init__(self):
         self.data = []
@@ -447,6 +665,8 @@ if __name__ == "__main__":
     #screen=CursesDummy()
     #screen.init()
     screen.exit()
+    screen.ohost = ohost
+
     if 0: #testunivers
         while 1:
             
@@ -459,18 +679,7 @@ if __name__ == "__main__":
     xsocket = Xsocket()
     univ_dmx = [ ["x"]*512 ]*16
     univ_heads = [ ["none"]*2 ]*16
-    ttime = time.time()
     counter = 0
-    cmd=[]
-    mode=""
-    sel_host=Pager()
-    sel_host.wrap=1
-    sel_univ=Pager()
-    sel_univ.wrap=1
-    sel_mode=Pager()
-    sel_mode.wrap=1
-    sel_mode.data = ["dmx","ltp","mtx","main"] # mtx = matrix
-    sel_mode.maxindex = len( sel_mode.data )-1
     head_uni=""
     dmx = []
     headlines = ""
@@ -488,6 +697,8 @@ if __name__ == "__main__":
                     head = struct.unpack("!8sHBBBBHBB" , head[0] )
                 except:                    
                     continue
+                #print("\n=====", [addr,data],"\n======" )
+                #sys.exit()
                 
                 head_uni = head[6]/255 # /512  # * 512
                 head_uni = int(head_uni)
@@ -504,202 +715,24 @@ if __name__ == "__main__":
                     print( head_uni, data[:30] )#dmx[:10]  )    
                     print( head_uni, dmx[:10]  )    
 
-            #continue
-            # input command buffer
-            screen.read()
-            inp2=screen.inp()
-            if "q" == inp2:
-                inp2=""
-                screen.exit()
-                sys.exit()
-            elif "?" == inp2:
-                mode = "?"
-            elif "," == inp2:
-                sel_mode.next()
-                inp2=""
-            elif ";" == inp2:
-                sel_mode.prev()
-                inp2=""
-            elif "." == inp2:
-                sel_univ.next()
-                inp2=""
-            elif ":" == inp2:
-                sel_univ.prev()
-                inp2=""
-            elif "-" == inp2:
-                sel_host.next()
-                inp2=""
-            elif "_" == inp2:
-                sel_host.prev()
-                inp2=""
-            elif "#" == inp2:
-                if "main" in sel_mode.data:
-                    x = sel_mode.data.index( "main")
-                    sel_mode.index = x
-                    sel_mode.check()
-                inp2=""
 
-            if inp2 == "\n":
-                cmd2 = "".join( cmd).split()
-                cmd=[]
-                if len(cmd2) < 2:
-                    pass
-                elif "C^" in cmd2:
-                    screen.exit()
-                    sys.exit()
-                elif "univ" in cmd2 or "u" == cmd2[0]:
-                    x=""
-                    if cmd2[1] in sel_univ.data:
-                        x = sel_univ.data.index( cmd2[1])
-                        sel_univ.index = x
-                        sel_univ.check()
-                elif "mode" in cmd2 or "m" == cmd2[0]:
-                    if cmd2[1] in sel_mode.data:
-                        x = sel_mode.data.index( cmd2[1])
-                        sel_mode.index = x
-                        sel_mode.check()
+            #screen.ohost = ohost
+            screen.sel_univ.data = ohost.univs()
+            #screen.sel_univ.check()
+            screen.sel_host.data = ohost.hosts()
+            #screen.sel_host.check()
 
-                elif "host" in cmd2 or "h" == cmd2[0]:
-                    try:
-                        x=int(cmd2[1]) 
-                        sel_host.set(x)
-                    except:
-                        pass
-            else:
-                cmd.append(inp2)
+            screen.loop()
 
-
-
-            sel_univ.data = ohost.univs()
-            sel_univ.check()
-            sel_host.data = ohost.hosts()
-            sel_host.check()
-            host  = sel_host.get()
-            univ2 = sel_univ.get()
-
-            mode  = sel_mode.get()
-
-            if time.time()-0.12 > ttime:
-
-                lines = [ ]
-                #print("cmd:",cmd)
-                lines.append(" CMD:" + "".join(cmd) )
-                if mode=="help" or  mode=="?":
-                    lines.append("HILFE[h]: " )
-                    lines.append("MODE [m]: inp, in2 in1 " )
-                    lines.append("UNIV [u]: 0-16  " )
-                    lines.append(" " )
-                    lines.append("HILFE " )
-                elif mode=="dmx" or mode == "DMX":
-                    ttime = time.time()
-                    dmx=ohost.get(host,univ=univ2)#univ=head_uni)
-                    info=ohost.info()
-                    #lines.append("frame "+str(info.keys()) )
-
-                    if univ2 in info:
-                        if host in info[univ2] :
-                            lines.append("frame "+str(info[univ2][host]["frame"]))
-                            x=""
-                            for i,v in enumerate(dmx):
-                                if v == 0:
-                                    v = "+"
-                                x += str(v).rjust(4," ")
-                                if (i+1) % 20 == 0:# and i:
-                                    lines.append(x)
-                                    x=""
-                            if x:
-                                lines.append(x)
-                                    
-                            lines.append(" ")
-                            lines.append(str(ttime))
-
-                    #screen.draw_lines(lines)
-                elif mode=="mtx":
-                    ttime = time.time()
-                    dmx=ohost.get_mtx(host,univ=univ2)#univ=head_uni)
-                    info=ohost.info()
-                    #lines.append("frame "+str(info.keys()) )
-
-                    if univ2 in info:
-                        if host in info[univ2] :
-                            lines.append("frame "+str(info[univ2][host]["frame"]))
-                            x=""
-                            for i,v in enumerate(dmx):
-                                x += str(v).rjust(4," ")
-                                if (i+1) % 20 == 0:# and i:
-                                    lines.append(x)
-                                    x=""
-                            if x:
-                                lines.append(x)
-                                    
-                            lines.append(" ")
-                            lines.append(str(ttime))
-
-                    #screen.draw_lines(lines)
-                elif mode=="ltp" or mode=="LTP":
-                    ttime = time.time()
-                    dmx=ohost.get(univ=univ2)#head_uni)
-                    #univ2=""
-                    host=""
-                    info=ohost.info()
-                    lines.append("frame "+str(info.keys()) )
-
-                    x=""
-                    for i,v in enumerate(dmx):
-                        x += str(v).rjust(4," ")
-                        if (i+1) % 20 == 0:
-                            lines.append(x)
-                            x=""
-                    if x:
-                        lines.append(x)
-                            
-                    lines.append(" ")
-                    lines.append(str(ttime))
-
-                    #screen.draw_lines(lines)
-                else:
-                    ttime = time.time()
-                    x=ohost.get(univ=head_uni)
-                    #lines = []
-                    host=""
-                    univ2=""
-                    info=ohost.info()
-                    jinfo = ""
-                    for i in info:
-                        xl = json.dumps(i) + "======= "
-                        lines.append( xl )
-                        for j in info[i]:
-                            lines.append( " " + json.dumps([j,""]) )
-                            if j not in sel_host.data:
-                                pass#sel_host.append(j)
-                            for k in info[i][j]:
-                                #lines.append( "   " + json.dumps( info[i][j]) )
-                                lines.append( "   "+str(k).ljust(5," ")+": " + json.dumps( info[i][j][k]) )
-                            
-                    lines.append(" ")
-                    lines.append(str(ttime))
-
-                    #screen.draw_lines(lines)
-                tmp = ""
-                tmp += " mode:"+(str(mode).ljust(10," "))
-                tmp += " univ:"+str(sel_univ.index)+":"+(str(univ2).ljust(10," "))
-                tmp += " host:"+str(sel_host.index)+":"+(str(host).ljust(10," "))
-                lines.insert(0,tmp)
-
-                tmp = ""
-                tmp += " univ:"+ (str(sel_univ.data))#.ljust(20," "))
-                tmp += " list:"+ (str(sel_host.data))#.ljust(20," "))
-                lines.insert(0,tmp)
-                screen.draw_lines(lines)
             time.sleep(.001)
     finally:
         screen.exit()
-        #print(dir(screen))
-        #print("###")
-        #print(screen.dir())
-        #print("###")
-        #print(dir(curses))
-        print( "finally",sel_host.index,sel_host.data)
+        print(dir(screen))
+        print("###")
+        print(screen.dir())
+        print("###")
+        print(dir(curses))
+        #print( "finally",sel_host.index,sel_host.data)
 
 
 
