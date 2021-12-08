@@ -38,6 +38,8 @@ parser.add_option("-r", "--recive", dest="recive",
                   help="set recive ip")
 parser.add_option("-s", "--sendto", dest="sendto",
                   help="set sender ip")
+parser.add_option("-t", "--test", dest="testuniv",
+                  help="set test univers ")
 #parser.add_option("-q", "--quiet",
 #                  action="store_false", dest="verbose", default=True,
 #                  help="don't print status messages to stdout")
@@ -374,14 +376,17 @@ class Manager():
                 #screen.draw_lines(lines)
             tmp = ""
             tmp += " mode:"+(str(self.mode).ljust(10," "))
-            tmp += " univ:"+str(self.sel_univ.index)+":"+(str(self.sel_univ.get()).ljust(10," "))
-            tmp += " host:"+str(self.sel_host.index)+":"+(str(self.sel_host.get()).ljust(10," "))
+            tmp += " univ:"+str(self.sel_univ.index)+":"+(str(self.sel_univ.get()).ljust(8," "))
+            tmp += " host:"+str(self.sel_host.index)+":"+(str(self.sel_host.get()).ljust(8," "))
+            tmp += " --recive:"+str(options.recive)
+            tmp += " --sendto:"+str(options.sendto)
             lines.insert(0,tmp)
 
             tmp = ""
             tmp += " univ:"+ (str(self.sel_univ.data))#.ljust(20," "))
             tmp += " list:"+ (str(self.sel_host.data))#.ljust(20," "))
             lines.insert(0,tmp)
+
             self.draw_lines(lines)
 
 
@@ -653,6 +658,11 @@ class ArtNetNode():
 
     """
     def __init__(self, to="10.10.10.255",univ=7):
+        try: 
+            univ = int(univ)
+        except:
+            print("errror univ",univ ,"is not int ... set to 7")
+            univ = 7
         self.univ=univ
         self.sendto = to
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -798,14 +808,16 @@ class Main():
         #artnet_out = ArtNetNode(to="10.0.25.255")
         artnet_out = ArtNetNode(to=options.sendto)
         #artnet_out._test_frame()
-        #artnet = ArtNetNode()
-        #artnet._test_frame()
+        if options.testuniv:
+            artnet = ArtNetNode(univ=options.testuniv)
+            artnet._test_frame()
         xsocket = Socket()
 
         send_time = time.time()
         try:
             while 1:
-                #artnet._test_frame()
+                if options.testuniv:
+                    artnet._test_frame()
                 #artnet_out._test_frame()
                 if xsocket.poll():
                     x = xsocket.recive()
