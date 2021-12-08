@@ -852,8 +852,9 @@ class Socket():
         if not self.__poll:
             try:
                 self.__data, self.__addr = self.sock.recvfrom(6454)
-                self.__poll = 1
 
+
+                self.__poll = 1
                 data, addr = (self.__data,self.__addr)
                 self.host = addr[0]
                 head    = data[:18]
@@ -863,10 +864,15 @@ class Socket():
                 try:
                     self.head = struct.unpack("!8sHBBBBHBB" , head )
                 except Exception as e:
-                    print( "======E09823" , e)
+                    pass#print( "======E09823" , e)
                 univ = self.head[6]/255 # /512  # * 512
                 self.univ = int(univ)
-                return 1
+
+                if self.host.startswith("10.10.10"):
+                    #print( self.host )
+                    return 1
+                else:
+                    self.__poll = 0
 
             except socket.timeout as e:
                 err = e.args[0]
@@ -895,6 +901,7 @@ class Socket():
 import time
 import socket
 import struct
+import random
 
 class ArtNetNode():
     """simple Object to generate ArtNet Network packages 
@@ -907,6 +914,12 @@ class ArtNetNode():
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.stamp = time.time()
+        self.test_stamp = time.time()
+        self.dmx=[33]*512
+        self.v=0
+        self.d=1
+
     def head(self):
         self._header = []
         self._header.append(b"Art-Net\x00")            # Name, 7byte + 0x00
@@ -922,7 +935,11 @@ class ArtNetNode():
 
         self._header = b"".join(self._header)
 
-    def send(self,dmx=[0]*512):
+    def send(self,dmx=None):
+        if dmx is None:
+            dmx = self.dmx
+        else:
+            self.dmx = dmx
         self.head()
         c=[self._header]
 
@@ -931,7 +948,9 @@ class ArtNetNode():
 
         dmx_count = 0
         for v in dmx:
-            if v > 255: # max dmx value 255
+            if type(v) is not int:
+                v=0
+            elif v > 255: # max dmx value 255
                 v = 255
             elif v < 0: # min dmx value 0
                 v = 0
@@ -940,29 +959,34 @@ class ArtNetNode():
         c = b"".join(c)
         self.s.sendto(c, (self.sendto, 6454))
         return c
+    def _test_frame(self):
+        if self.test_stamp+0.1 > time.time():
+            return 0
+        self.test_stamp = time.time()
+        dmx = [0]*512
+        dmx[420] = self.v
+        self.dmx = dmx
+        self.next()
+        #self.send(dmx)
+        #print( [x] )
+        if self.v >= 255:
+            self.d=0
+        elif self.v <=0:
+            self.d=1
 
+        if self.d:
+            self.v+=1
+        else:
+            self.v-=1
+
+        #time.sleep(1/30.)
+    def next(self):
+        if self.stamp + (1/60) <= time.time():
+            self.send()
 
 def artnet_test():
-    import random
     artnet = ArtNetNode()
-    v=0
-    d=1
-    while 1:
-        dmx = [0]*512
-        dmx[0] = v
-        x=artnet.send(dmx)
-        print( [x] )
-        if v >= 255:
-            d=0
-        elif v <=0:
-            d=1
-
-        if d:
-            v+=1
-        else:
-            v-=1
-
-        time.sleep(1/30.)
+    artnet._tes_frame()
 
 # ============================================================   
 # helper =====================================================   
@@ -1027,9 +1051,18 @@ class Main():
         screen.exit()
         screen.ohost = ohost
                 
+        #artnet_out = ArtNetNode(to="10.0.25.255")
+        artnet_out = ArtNetNode(to="2.255.255.255")
+        #artnet_out._test_frame()
+        artnet = ArtNetNode()
+        artnet._test_frame()
         xsocket = Socket()
+
+        send_time = time.time()
         try:
             while 1:
+                artnet._test_frame()
+                #artnet_out._test_frame()
                 if xsocket.poll():
                     x = xsocket.recive()
                     ohost.update(x["host"],x["univ"],x["dmx"])     
@@ -1037,6 +1070,28 @@ class Main():
                 screen.sel_univ.data = ohost.univs()
                 screen.sel_host.data = ohost.hosts()
 
+                if send_time +(1/30.) < time.time():
+                    send_time = time.time()
+                    #x=ohost.get(univ=univ2)
+                    info=ohost.info()
+                    jinfo = ""
+                    for i in info:
+                        univ = i
+                        #print( [ univ])
+                        if str(univ) == "54":
+                            break
+                        xl = json.dumps(univ) + "======= "
+                        ltp=ohost.get(univ=i)
+                        
+                        #print( xl )
+                        #print( len(ltp) ,ltp[:20])
+                        ltp[511] = int(univ)
+                        artnet_out.univ=int(univ)
+                        artnet_out.send(ltp)
+                        #for j in info[i]:
+                        #    print( str(univ)+" " + json.dumps([j,""]) )
+                        #    for k in info[i][j]:
+                        #        print( str(univ)+ "   "+str(k).ljust(5," ")+": " + json.dumps( info[i][j][k]) )
                 screen.loop()
 
                 time.sleep(.001)
