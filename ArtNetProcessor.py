@@ -853,6 +853,19 @@ class Socket():
             try:
                 self.__data, self.__addr = self.sock.recvfrom(6454)
                 self.__poll = 1
+
+                data, addr = (self.__data,self.__addr)
+                self.host = addr[0]
+                head    = data[:18]
+                rawdmx  = data[18:]
+                #print([head],addr)
+                self.univ = -1
+                try:
+                    self.head = struct.unpack("!8sHBBBBHBB" , head )
+                except Exception as e:
+                    print( "======E09823" , e)
+                univ = self.head[6]/255 # /512  # * 512
+                self.univ = int(univ)
                 return 1
 
             except socket.timeout as e:
@@ -868,8 +881,14 @@ class Socket():
     def recive(self):
         if self.__poll:
             self.__poll = 0
-            return (self.__data,self.__addr)
 
+            data, addr = (self.__data,self.__addr)
+            #print( self.univ,self.head)
+
+            self.dmx  = unpack_art_dmx(data)
+
+            return { "host":self.host,"dmx":self.dmx,"univ":self.univ,"head":self.head,"data":data,"addr":addr}
+    
 # ============================================================   
 # miniartnet4.py =============================================   
 # ============================================================   
@@ -1002,103 +1021,28 @@ class Main():
     def __init__(self):
         pass
     def loop(self):
-        frames = [0]*10000
-        print("frame",frames)
         ohost = HostBuffer()
-
-        univers = None
-        if len(sys.argv) >= 2+1 and sys.argv[1] == "-u":
-           univers = sys.argv[2]
-        
-        inp = "q"
-        univ2= "8"
-        univers = 0# inp.read(univers)
-        debug   = 0# inp.debug()
-        
-        packets = 0
-
-        #self.__myscreen.getch()
-        dmx = [0] * 512
-
-        fps = 0
-        fpsi = 0
-        fpst =int(time.time())
-        head= "XXX"
-        
-        dmx_ch_buffer = []
         
         screen=Manager()
-        #screen=CursesDummy()
-        #screen.init()
         screen.exit()
         screen.ohost = ohost
-
-        if 0: #testunivers
-            while 1:
                 
-                screen.draw("head",list(range(1,512+1)))
-                time.sleep(1)
-                screen.draw("head",[0]*512)
-                time.sleep(1)
-                
-        frame = 0
         xsocket = Socket()
-        univ_dmx = [ ["x"]*512 ]*16
-        univ_heads = [ ["none"]*2 ]*16
-        counter = 0
-        head_uni=""
-        dmx = []
-        headlines = ""
         try:
             while 1:
-                dmx = univ_dmx[univers]
-                headlines = univ_heads[univers]
-                dmx = []
-                text = ""
                 if xsocket.poll():
-                    data, addr = xsocket.recive()
-                    head = [data[:18]]
-                    dmx = data[18:]
-                    try:
-                        head = struct.unpack("!8sHBBBBHBB" , head[0] )
-                    except:                    
-                        continue
-                    #print("\n=====", [addr,data],"\n======" )
-                    #sys.exit()
-                    
-                    head_uni = head[6]/255 # /512  # * 512
-                    head_uni = int(head_uni)
-                    #print("head_uni", head_uni)
-                    if head_uni < len(frames):# and len(data) == 530:
-                        frames[head_uni] += 1 
-                    host = addr[0]
-                    dmx = unpack_art_dmx(data)
+                    x = xsocket.recive()
+                    ohost.update(x["host"],x["univ"],x["dmx"])     
 
-                    ohost.update(host,head_uni,dmx)     
-                    #screen.exit()
-                    if 0:# len(dmx):
-                        print( host)
-                        print( head_uni, data[:30] )#dmx[:10]  )    
-                        print( head_uni, dmx[:10]  )    
-
-
-                #screen.ohost = ohost
                 screen.sel_univ.data = ohost.univs()
-                #screen.sel_univ.check()
                 screen.sel_host.data = ohost.hosts()
-                #screen.sel_host.check()
 
                 screen.loop()
 
                 time.sleep(.001)
         finally:
             screen.exit()
-            #print(dir(screen))
-            #print("###")
-            #print(screen.dir())
-            #print("###")
             #print(dir(curses))
-            #print( "finally",sel_host.index,sel_host.data)
 
 
 if __name__ == "__main__":
