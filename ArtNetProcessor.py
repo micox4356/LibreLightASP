@@ -35,11 +35,11 @@ import json
 from optparse import OptionParser
 parser = OptionParser()
 parser.add_option("-r", "--recive", dest="recive",
-                  help="set recive ip")
+                  help="set recive ip like --recive 10.")
 parser.add_option("-s", "--sendto", dest="sendto",
-                  help="set sender ip")
+                  help="set sender ip like --sendto 2.255.255.255")
 parser.add_option("-t", "--test", dest="testuniv",
-                  help="set test univers ")
+                  help="set test univers like --test [0-16]")
 #parser.add_option("-q", "--quiet",
 #                  action="store_false", dest="verbose", default=True,
 #                  help="don't print status messages to stdout")
