@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 #from __future__ import absolute_import, division, print_function
 #from builtins import str, open, range, dict
@@ -24,6 +24,9 @@ along with librelight.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import sys
+if sys.version_info.major <= 2:
+    print("exit Python3 is needet")
+    sys.exit()
 sys.stdout.write("\x1b]2;DMX-SHEET 5\x07") # terminal title
 
 import string
@@ -92,8 +95,8 @@ class Manager():
     def __init__(self):
 
         self.myscreen = curses.initscr()
-        print( dir(self.myscreen))
-        print( self.myscreen.getmaxyx() ) 
+        #print( dir(self.myscreen))
+        #print( self.myscreen.getmaxyx() ) 
         self._inp=""
         self.cmd = []
         if options.sendto:
@@ -584,22 +587,24 @@ def unpack_art_dmx(data):
 
         
 class Socket():
-    def __init__(self):
+    def __init__(self,bind='',port=6454):
+        self.__port =port
+        self.__bind =bind
         self.__poll = 0
         self.__data = []
         self.__addr = "NONE"
         self.open()
     def open(self):
         try:
-            print("connecting to ArtNet Port 6454")
+            print("connecting to ArtNet bind:",self.__bind,"Port",self.__port)
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             
-            self.sock.bind(('', 6454))
+            self.sock.bind((self.__bind, self.__port))
             fcntl.fcntl(self.sock, fcntl.F_SETFL, os.O_NONBLOCK)
             #self.sock.setblocking(0)
             
         except socket.error as e:
-            print("Socket 6454 ", "ERR: {0} ".format(e.args))
+            print("Socket ",self.__bind,self.__port, "ERR: {0} ".format(e.args))
             #raw_input()
             #sys.exit()
     def poll(self):
@@ -664,7 +669,7 @@ class ArtNetNode():
        works in Python2 and Python3  2021-12-05
 
     """
-    def __init__(self, to="10.10.10.255",univ=7):
+    def __init__(self, to="10.10.10.255",univ=7,port=6454):
         try: 
             univ = int(univ)
         except:
@@ -672,6 +677,7 @@ class ArtNetNode():
             univ = 7
         self.univ=univ
         self.sendto = to
+        self.portto = port
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -696,7 +702,7 @@ class ArtNetNode():
 
         self._header = b"".join(self._header)
 
-    def send(self,dmx=None):
+    def send(self,dmx=None,port=''):
         if dmx is None:
             dmx = self.dmx
         else:
@@ -718,7 +724,10 @@ class ArtNetNode():
             dmx_count += 1
             c.append(struct.pack("B",v))
         c = b"".join(c)
-        self.s.sendto(c, (self.sendto, 6454))
+        if port:
+            self.s.sendto(c, (self.sendto, port)) # default 6454
+        else:
+            self.s.sendto(c, (self.sendto, self.portto)) # default 6454
         return c
     def _test_frame(self):
         if self.test_stamp+0.1 > time.time():
@@ -819,6 +828,7 @@ class Main():
             artnet = ArtNetNode(univ=options.testuniv)
             artnet._test_frame()
         xsocket = Socket()
+        ysocket = Socket(bind='localhost' ,port=6555)
 
         send_time = time.time()
         try:
@@ -828,6 +838,9 @@ class Main():
                 #artnet_out._test_frame()
                 if xsocket.poll():
                     x = xsocket.recive()
+                    ohost.update(x["host"],x["univ"],x["dmx"])     
+                if ysocket.poll():
+                    x = ysocket.recive()
                     ohost.update(x["host"],x["univ"],x["dmx"])     
 
                 screen.sel_univ.data = ohost.univs()
