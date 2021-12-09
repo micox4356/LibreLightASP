@@ -96,14 +96,20 @@ class Manager():
         print( self.myscreen.getmaxyx() ) 
         self._inp=""
         self.cmd = []
-        self.mode="ltp"
+        if options.sendto:
+            self.mode="ltp"
+        else:
+            self.mode="dmx"
         self.sel_host=Pager()
         self.sel_host.wrap=1
         self.sel_univ=Pager()
         self.sel_univ.wrap=1
         self.sel_mode=Pager()
         self.sel_mode.wrap=1
-        self.sel_mode.data = ["ltp","dmx","mtx","main"] # mtx = matrix
+        if options.sendto:
+            self.sel_mode.data = ["ltp","dmx","mtx","main"] # mtx = matrix
+        else:
+            self.sel_mode.data = ["dmx","main"] # mtx = matrix
         self.sel_mode.maxindex = len( self.sel_mode.data )-1
         self.ttime = time.time()
         self.univ2 = 0
@@ -590,6 +596,7 @@ class Socket():
             
             self.sock.bind(('', 6454))
             fcntl.fcntl(self.sock, fcntl.F_SETFL, os.O_NONBLOCK)
+            #self.sock.setblocking(0)
             
         except socket.error as e:
             print("Socket 6454 ", "ERR: {0} ".format(e.args))
