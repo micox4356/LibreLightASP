@@ -610,7 +610,7 @@ class Socket():
     def poll(self):
         if not self.__poll:
             try:
-                self.__data, self.__addr = self.sock.recvfrom(6454)
+                self.__data, self.__addr = self.sock.recvfrom(self.__port)
 
 
                 data, addr = (self.__data,self.__addr)
@@ -626,7 +626,10 @@ class Socket():
                 univ = self.head[6]/255 # /512  # * 512
                 self.univ = int(univ)
 
-                if not options.recive:
+                if self.host.startswith("127."): #allways recive localhost on port 
+                    self.__poll = 1
+                    return 1
+                elif not options.recive:
                     self.__poll = 1
                     return 1
                 elif self.host.startswith(options.recive): 
@@ -827,8 +830,9 @@ class Main():
         if options.testuniv:
             artnet = ArtNetNode(univ=options.testuniv)
             artnet._test_frame()
+
+        ysocket = Socket(bind='127.0.0.1' ,port=6555)
         xsocket = Socket()
-        ysocket = Socket(bind='localhost' ,port=6555)
 
         send_time = time.time()
         try:
