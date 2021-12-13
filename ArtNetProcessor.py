@@ -43,6 +43,8 @@ parser.add_option("-s", "--sendto", dest="sendto",
                   help="set sender ip like --sendto 2.255.255.255")
 parser.add_option("-t", "--test", dest="testuniv",
                   help="set test univers like --test [0-16]")
+parser.add_option("", "--inmap", dest="inmap",
+                  help="set test univers like --test [0-16]")
 #parser.add_option("-q", "--quiet",
 #                  action="store_false", dest="verbose", default=True,
 #                  help="don't print status messages to stdout")
@@ -842,9 +844,19 @@ class Main():
                 #artnet_out._test_frame()
                 if xsocket.poll():
                     x = xsocket.recive()
+                    if x["host"] == options.recive:
+                        try:
+                            x["univ"] = int(options.inmap )
+                        except TypeError:
+                            pass
                     ohost.update(x["host"],x["univ"],x["dmx"])     
                 if ysocket.poll():
                     x = ysocket.recive()
+                    if x["host"] == options.recive:
+                        try:
+                            x["univ"] = int(options.inmap )
+                        except TypeError:
+                            pass
                     ohost.update(x["host"],x["univ"],x["dmx"])     
 
                 screen.sel_univ.data = ohost.univs()
