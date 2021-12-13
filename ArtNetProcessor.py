@@ -120,6 +120,7 @@ class Manager():
         self.univ2 = 0
         self.host =""
         self.ohost = HostBuffer() # as default
+        self.__reinit_time = time.time()
     def dir(self):
         return dir(self.myscreen)
     def test(self):
@@ -130,7 +131,11 @@ class Manager():
             time.sleep(10)
         finally:
             self.exit()
-
+    def reinit(self):
+        self.exit()
+        print( "reinit",time.time())
+        self.init()
+        self.__reinit_time = time.time()
     def init(self):
         curses.savetty()
         curses.noecho()
@@ -162,7 +167,8 @@ class Manager():
             self.myscreen.resize(x-1,y-1) # to prevent slowdown..
             self.myscreen.resize(x,y)
 
-            
+            if self.__reinit_time+60 < time.time():
+                self.reinit()
 
         except KeyboardInterrupt as e:
             self.exit()
