@@ -282,7 +282,7 @@ class Manager():
 
             lines = [ ]
             #print("cmd:",cmd)
-            lines.append(" CMD:" + "".join(self.cmd) )
+            lines.append(" host:"+ hostname +" CMD:" + "".join(self.cmd) )
             if self.mode=="help" or  self.mode=="?":
                 lines.append("HILFE[h]: " )
                 lines.append("MODE [m]: inp, in2 in1 " )
@@ -564,6 +564,7 @@ class HostBuffer():
 # Network ====================================================   
 # ============================================================   
 import socket, struct
+hostname = socket.gethostname()
 import fcntl  #socket control
 import errno
 def toPrintable(nonprintable):
