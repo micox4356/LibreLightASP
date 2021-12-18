@@ -873,6 +873,21 @@ class Pager(): #scroll thru list
             elif self.index < 0:
                 self.index = 0
 
+class Timer():
+    def __init__(self,sec=1,start=None):
+        if start is None:
+            self.last = time.time()
+        else:
+            self.last = start
+        self.sec = sec
+        print( self,"init")
+    def reset(self):
+        self.last = time.time()
+    def check(self):
+        if self.last+self.sec < time.time():
+            #print(self,"chk",time.time()+self.sec-time.time())
+            self.reset()
+            return 1
 
 # ============================================================   
 # main =======================================================   
@@ -897,8 +912,10 @@ class Main():
         #ysocket = Socket(bind='127.0.0.1' ,port=6555)
         xsocket = Socket()
 
-        send_time = time.time()
         xt = time.time()
+        ohost_buf = {}
+        ohost_timer = Timer(1/20.,start=0) # 0.03333
+        send_timer = Timer(1/30.) # 0.03333
         try:
             screen.exit()
             while 1:
@@ -915,7 +932,13 @@ class Main():
                             x["univ"] = int(options.inmap )
                         except TypeError:
                             pass
-                    ohost.update(x["host"],x["univ"],x["dmx"])     
+                    if x["host"] not in ohost_buf:
+                        ohost_buf[x["host"]] = {}
+                    if x["univ"] not in ohost_buf[x["host"]]:
+                        ohost_buf[x["host"]][x["univ"]] = {}
+
+                    ohost_buf[x["host"]][x["univ"]] = x["dmx"] #write into buffer to prevent package latency encreasing
+                    #ohost.update(x["host"],x["univ"],x["dmx"])     
                 if 0:#ysocket.poll():
                     poll_flag = 1
                     x = ysocket.recive()
@@ -932,12 +955,20 @@ class Main():
                 #if x:
                 #     #screen.exit()
                 #     print( "poll_clean",x)
-                if send_time +(1/30.) < time.time() and options.sendto:
-                    x= xsocket.poll_clean()
 
-                    send_time = time.time()
+                if ohost_timer.check():
+                    for i in ohost_buf:
+                        for j in ohost_buf[i]:
+                             dmx=ohost_buf[i][j]
+                             ohost.update(i,j,dmx) # update univ_data from input buffer    
+                    ohost_buf = {} # clear package buffer
+
+                if send_timer.check() and options.sendto:
+                    #x= xsocket.poll_clean()
+
                     #x=ohost.get(univ=univ2)
                     info=ohost.info()
+                    #print( info)
                     jinfo = ""
                     for i in info:
                         univ = i
@@ -949,6 +980,7 @@ class Main():
                         
                         #print( xl )
                         #print( len(ltp) ,ltp[:20])
+                        #print( "univ", univ )
                         ltp[511] = int(univ)
                         artnet_out.univ=int(univ)
                         artnet_out.send(ltp)
@@ -958,12 +990,12 @@ class Main():
                         #        print( str(univ)+ "   "+str(k).ljust(5," ")+": " + json.dumps( info[i][j][k]) )
 
                 if not poll_flag: 
-                    time.sleep(.01)
+                    time.sleep(.001)
                 else:
                     pass
                     #screen.exit()
                     #print( int((time.time()-xt)*10000),poll_flag)
-                screen.loop()
+                #screen.loop()
         finally:
             pass
             #screen.exit()
@@ -971,7 +1003,9 @@ class Main():
 
 
 if __name__ == "__main__":
+    print("main")
     main = Main()
+    print("loop")
     main.loop()
 
 
