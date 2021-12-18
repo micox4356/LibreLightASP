@@ -93,9 +93,8 @@ class CursesDummy():
 
 
 
-class Manager():
+class Window():
     def __init__(self):
-
         self.myscreen = curses.initscr()
         #print( dir(self.myscreen))
         #print( self.myscreen.getmaxyx() ) 
@@ -103,6 +102,7 @@ class Manager():
         self.cmd = []
         if options.sendto:
             self.mode="ltp"
+            self.mode="stop"
         else:
             self.mode="dmx"
         self.sel_host=Pager()
@@ -112,7 +112,7 @@ class Manager():
         self.sel_mode=Pager()
         self.sel_mode.wrap=1
         if options.sendto:
-            self.sel_mode.data = ["ltp","dmx","mtx","main"] # mtx = matrix
+            self.sel_mode.data = ["stop","ltp","dmx","mtx","main"] # mtx = matrix
         else:
             self.sel_mode.data = ["dmx","main"] # mtx = matrix
         self.sel_mode.maxindex = len( self.sel_mode.data )-1
@@ -134,6 +134,9 @@ class Manager():
     def reinit(self):
         self.exit()
         print( "reinit",time.time())
+        self.myscreen = curses.initscr()
+        #time.sleep(5)
+        #self.__init()
         self.init()
         self.__reinit_time = time.time()
     def init(self):
@@ -214,6 +217,7 @@ class Manager():
         # input command buffer
         self.read()
         inp2=self.inp()
+        x=""
         if "q" == inp2:
             inp2=""
             self.exit()
@@ -221,22 +225,22 @@ class Manager():
         elif "?" == inp2:
             self.mode = "?"
         elif "," == inp2:
-            self.sel_mode.next()
+            x=self.sel_mode.next()
             inp2=""
         elif ";" == inp2:
-            self.sel_mode.prev()
+            x=self.sel_mode.prev()
             inp2=""
         elif "." == inp2:
-            self.sel_univ.next()
+            x=self.sel_univ.next()
             inp2=""
         elif ":" == inp2:
-            self.sel_univ.prev()
+            x=self.sel_univ.prev()
             inp2=""
         elif "-" == inp2:
-            self.sel_host.next()
+            x=self.sel_host.next()
             inp2=""
         elif "_" == inp2:
-            self.sel_host.prev()
+            x=self.sel_host.prev()
             inp2=""
         elif "#" == inp2:
             if "main" in self.sel_mode.data:
@@ -244,7 +248,9 @@ class Manager():
                 self.sel_mode.index = x
                 self.sel_mode.check()
             inp2=""
-
+        if x:
+             self.myscreen.addstr(0, 6,str(x) )
+        
         if inp2 == "\n":
             cmd2 = "".join( self.cmd).split()
             self.cmd=[]
@@ -285,10 +291,11 @@ class Manager():
         self.mode  = self.sel_mode.get()
 
         if time.time()-0.12 > self.ttime:
+            #if 1:
 
             lines = [ ]
             #print("cmd:",cmd)
-            lines.append(" host:"+ hostname +" CMD:" + "".join(self.cmd) )
+            lines.append(" host:"+ hostname +":"+netns+" CMD:" + "".join(self.cmd) )
             if self.mode=="help" or  self.mode=="?":
                 lines.append("HILFE[h]: " )
                 lines.append("MODE [m]: inp, in2 in1 " )
@@ -319,6 +326,8 @@ class Manager():
                         lines.append(str(self.ttime))
 
                 #screen.draw_lines(lines)
+            elif self.mode=="stop":
+                return 0
             elif self.mode=="mtx":
                 self.ttime = time.time()
                 dmx=self.ohost.get_mtx(host,univ=univ2)#univ=head_uni)
@@ -466,6 +475,7 @@ class UniversBuffer():
 
         self._next_frame(host)
 
+        #if len(dmxframe) <= 512: #len(dmxframe_old):
         if len(dmxframe) <= 512: #len(dmxframe_old):
             for i,v in enumerate(dmxframe):
                 if dmxframe[i] != dmxframe_old[i]:
@@ -505,8 +515,6 @@ class UniversBuffer():
         return dmx
     def get_mtx(self,host=""):
         return self.__universes_matrix
-
-
     def info(self):
         return self.__universes_info
     def hosts(self):
@@ -571,6 +579,11 @@ class HostBuffer():
 # ============================================================   
 import socket, struct
 hostname = socket.gethostname()
+netns = "none"
+x = os.popen("ip netns identify $$")
+xx = x.read()
+if xx:
+    netns = xx.strip()
 import fcntl  #socket control
 import errno
 def toPrintable(nonprintable):
@@ -602,7 +615,12 @@ class Socket():
         self.__poll = 0
         self.__data = []
         self.__addr = "NONE"
+        #self.__hosts = {"host":{"9":[0]*512}}
+        self.__hosts = {}
+        self.hosts = self.__hosts
         self.open()
+        self._poll_clean_time = time.time()
+        self._poll_clean_count = 0
     def open(self):
         try:
             print("connecting to ArtNet bind:",self.__bind,"Port",self.__port)
@@ -616,6 +634,29 @@ class Socket():
             print("Socket ",self.__bind,self.__port, "ERR: {0} ".format(e.args))
             #raw_input()
             #sys.exit()
+    def poll_clean(self):
+        if self._poll_clean_time+(1/25.) <= time.time():
+            self._poll_clean_time = time.time()
+            self._poll_clean()
+            x = self._poll_clean_count 
+            self._poll_clean_count = 0
+            return x
+    def _poll_clean(self):
+        while 1:
+            try:
+                self.__data, self.__addr = self.sock.recvfrom(self.__port)
+                self._poll_clean_count += 1
+                #return 1
+            except socket.timeout as e:
+                err = e.args[0]
+                if err == 'timed out':
+                    time.sleep(1)
+                    print('recv timed out, retry later')
+                else:
+                    print(e)
+                break
+            except socket.error as e:
+                break
     def poll(self):
         if not self.__poll:
             try:
@@ -646,11 +687,22 @@ class Socket():
                     return 1
                 else:
                     self.__poll = 0
+                
+                addr = str(addr)
+                univ = str(univ)
+                if self.__poll:
+                    if addr not in self.__hosts:
+                        self.__hosts[addr] = {}
+                    if univ not in self.__hosts[addr]:
+                        self.__hosts[addr][univ] = {}
+			
+                    self.__hosts[addr][univ] = {"head":head,"addr":addr,"univ":univ,"dmx":rawdmx}
+                    self.hosts = self.__hosts
 
             except socket.timeout as e:
                 err = e.args[0]
                 if err == 'timed out':
-                    sleep(1)
+                    time.sleep(1)
                     print('recv timed out, retry later')
                 else:
                     print(e)
@@ -795,9 +847,11 @@ class Pager(): #scroll thru list
     def next(self):
         self.index += 1
         self.check(flag=1)
+        return self.get()
     def prev(self):
         self.index -= 1
         self.check(flag=1)
+        return self.get()
     def check(self,flag=0):
         if flag:
             if self.maxindex and self.maxindex <= len(self.data):
@@ -829,7 +883,7 @@ class Main():
     def loop(self):
         ohost = HostBuffer()
         
-        screen=Manager()
+        screen=Window()
         screen.exit()
         screen.ohost = ohost
                 
@@ -840,16 +894,21 @@ class Main():
             artnet = ArtNetNode(univ=options.testuniv)
             artnet._test_frame()
 
-        ysocket = Socket(bind='127.0.0.1' ,port=6555)
+        #ysocket = Socket(bind='127.0.0.1' ,port=6555)
         xsocket = Socket()
 
         send_time = time.time()
+        xt = time.time()
         try:
+            screen.exit()
             while 1:
+                poll_flag = 0
                 if options.testuniv:
                     artnet._test_frame()
                 #artnet_out._test_frame()
                 if xsocket.poll():
+                    xt = time.time()
+                    poll_flag = 1
                     x = xsocket.recive()
                     if x["host"] == options.recive:
                         try:
@@ -857,7 +916,8 @@ class Main():
                         except TypeError:
                             pass
                     ohost.update(x["host"],x["univ"],x["dmx"])     
-                if ysocket.poll():
+                if 0:#ysocket.poll():
+                    poll_flag = 1
                     x = ysocket.recive()
                     if x["host"] == options.recive:
                         try:
@@ -869,7 +929,11 @@ class Main():
                 screen.sel_univ.data = ohost.univs()
                 screen.sel_host.data = ohost.hosts()
 
+                #if x:
+                #     #screen.exit()
+                #     print( "poll_clean",x)
                 if send_time +(1/30.) < time.time() and options.sendto:
+                    x= xsocket.poll_clean()
 
                     send_time = time.time()
                     #x=ohost.get(univ=univ2)
@@ -892,11 +956,17 @@ class Main():
                         #    print( str(univ)+" " + json.dumps([j,""]) )
                         #    for k in info[i][j]:
                         #        print( str(univ)+ "   "+str(k).ljust(5," ")+": " + json.dumps( info[i][j][k]) )
-                screen.loop()
 
-                time.sleep(.001)
+                if not poll_flag: 
+                    time.sleep(.01)
+                else:
+                    pass
+                    #screen.exit()
+                    #print( int((time.time()-xt)*10000),poll_flag)
+                screen.loop()
         finally:
-            screen.exit()
+            pass
+            #screen.exit()
             #print(dir(curses))
 
 
