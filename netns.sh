@@ -1,4 +1,5 @@
 nr="2$1"
+
 echo $1
 #exit 
 ip netns del "blue$nr"
