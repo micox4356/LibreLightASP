@@ -102,7 +102,7 @@ class Window():
         self.cmd = []
         if options.sendto:
             self.mode="ltp"
-            self.mode="stop"
+            #self.mode="stop"
         else:
             self.mode="dmx"
         self.sel_host=Pager()
@@ -112,7 +112,7 @@ class Window():
         self.sel_mode=Pager()
         self.sel_mode.wrap=1
         if options.sendto:
-            self.sel_mode.data = ["stop","ltp","dmx","mtx","main"] # mtx = matrix
+            self.sel_mode.data = ["ltp","dmx","mtx","main"] # mtx = matrix
         else:
             self.sel_mode.data = ["dmx","main"] # mtx = matrix
         self.sel_mode.maxindex = len( self.sel_mode.data )-1
@@ -914,7 +914,7 @@ class Main():
 
         xt = time.time()
         ohost_buf = {}
-        ohost_timer = Timer(1/20.,start=0) # 0.03333
+        ohost_timer = Timer(1/30.,start=0) # 0.03333
         send_timer = Timer(1/30.) # 0.03333
         try:
             screen.exit()
@@ -923,7 +923,8 @@ class Main():
                 if options.testuniv:
                     artnet._test_frame()
                 #artnet_out._test_frame()
-                if xsocket.poll():
+                #if xsocket.poll():
+                while xsocket.poll():
                     xt = time.time()
                     poll_flag = 1
                     x = xsocket.recive()
@@ -991,11 +992,7 @@ class Main():
 
                 if not poll_flag: 
                     time.sleep(.001)
-                else:
-                    pass
-                    #screen.exit()
-                    #print( int((time.time()-xt)*10000),poll_flag)
-                #screen.loop()
+                screen.loop()
         finally:
             pass
             #screen.exit()
