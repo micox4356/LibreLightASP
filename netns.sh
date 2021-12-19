@@ -1,5 +1,7 @@
-nr="2$1"
+#!/usr/bin/bash
+#x
 
+nr="2$1"
 echo $1
 #exit 
 ip netns del "blue$nr"
@@ -18,5 +20,9 @@ ip link list
 ip netns exec "blue$nr" ip addr add 10.10.10.$nr/24 dev veth1$nr
 ip netns exec "blue$nr" ip addr add 10.0.25.$nr/24 dev veth1$nr
 ip netns exec "blue$nr" ip addr add 2.0.0.$nr/8 dev veth1$nr:1
-#ip netns exec "blue$nr" 'su - user' 
-ip netns exec "blue$nr" su - user
+ip netns
+echo "$2"
+if [ "x$2" = 'xbash' ]; then
+    #ip netns exec "blue$nr" 'su - user' 
+    ip netns exec "blue$nr" su - user
+fi
