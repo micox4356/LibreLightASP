@@ -73,10 +73,10 @@ class ArtNetNode():
         time.sleep(0.0001)
         return c
     def _test_frame(self):
-        if self.test_stamp+(.01) < time.time():
+        if self.test_stamp+(.0010351) < time.time():
             self.test_stamp = time.time()
             dmx = [0]*512
-            dmx[201-1] = self.v
+            dmx[205-1] = self.v
             self.dmx = dmx
             if self.v >= 255:
                 self.d=0
@@ -84,9 +84,9 @@ class ArtNetNode():
                 self.d=1
 
             if self.d:
-                self.v+=1
+                self.v+=3
             else:
-                self.v-=1
+                self.v-=3
             #print( self.v)
         #time.sleep(1/30.)
     def next(self):

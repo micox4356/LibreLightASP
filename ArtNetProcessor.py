@@ -102,7 +102,7 @@ class Window():
         self.cmd = []
         if options.sendto:
             self.mode="ltp"
-            #self.mode="stop"
+            self.mode="stop"
         else:
             self.mode="dmx"
         self.sel_host=Pager()
@@ -112,7 +112,7 @@ class Window():
         self.sel_mode=Pager()
         self.sel_mode.wrap=1
         if options.sendto:
-            self.sel_mode.data = ["ltp","dmx","mtx","main"] # mtx = matrix
+            self.sel_mode.data = ["stop","ltp","dmx","mtx","main"] # mtx = matrix
         else:
             self.sel_mode.data = ["dmx","main"] # mtx = matrix
         self.sel_mode.maxindex = len( self.sel_mode.data )-1
