@@ -307,6 +307,8 @@ class Window():
             if self.ttime+5 < time.time():
                 self.ttime = time.time()
                 self.draw_lines( ["STOP",str(time.time())] )
+                #self.exit()
+                #print( ["STOP",str(time.time())] )
             return
 
         if time.time()-0.12 > self.ttime:

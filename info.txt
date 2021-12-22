@@ -1,0 +1,10 @@
+crontab
+
+@reboot screen -d -m -S ASP4 /home/pi/ASP/start_ASP.sh
+@reboot sh /home/pi/ASP/setup_IN.sh
+@reboot sudo sh /home/pi/start_ap.sh
+
+
+
+#copy sources
+scp -r micha@10.10.10.4:/home/micha/ASP .
