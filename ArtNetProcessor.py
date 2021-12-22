@@ -52,7 +52,14 @@ parser.add_option("", "--inmap", dest="inmap",
 (options, args) = parser.parse_args()
 print("option",options)
 print(options.sendto)
-
+cython = 0
+if cython:
+    if " arm" in os.popen("uname -a").read():
+        import cy.ArtNetProcessor_cy_pi as cy
+    else:
+        import cy.ArtNetProcessor_cy as cy
+#print(dir())
+#input()
 
 from collections import OrderedDict
 
@@ -114,7 +121,7 @@ class Window():
         if options.sendto:
             self.sel_mode.data = ["stop","ltp","dmx","mtx","main"] # mtx = matrix
         else:
-            self.sel_mode.data = ["dmx","main"] # mtx = matrix
+            self.sel_mode.data = ["dmx","mtx","main"] # mtx = matrix
         self.sel_mode.maxindex = len( self.sel_mode.data )-1
         self.ttime = time.time()
         self.univ2 = 0
@@ -226,27 +233,34 @@ class Window():
             self.mode = "?"
         elif "," == inp2:
             x=self.sel_mode.next()
+            self.ttime = time.time()-2
             inp2=""
         elif ";" == inp2:
             x=self.sel_mode.prev()
+            self.ttime = time.time()-2
             inp2=""
         elif "." == inp2:
             x=self.sel_univ.next()
+            self.ttime = time.time()-2
             inp2=""
         elif ":" == inp2:
             x=self.sel_univ.prev()
+            self.ttime = time.time()-2
             inp2=""
         elif "-" == inp2:
             x=self.sel_host.next()
+            self.ttime = time.time()-2
             inp2=""
         elif "_" == inp2:
             x=self.sel_host.prev()
+            self.ttime = time.time()-2
             inp2=""
         elif "#" == inp2:
             if "main" in self.sel_mode.data:
                 x = self.sel_mode.data.index( "main")
                 self.sel_mode.index = x
                 self.sel_mode.check()
+                self.ttime = time.time()-2
             inp2=""
         if x:
              self.myscreen.addstr(0, 6,str(x) )
@@ -289,6 +303,11 @@ class Window():
         univ2 = self.sel_univ.get()
 
         self.mode  = self.sel_mode.get()
+        if self.mode == "stop":
+            if self.ttime+5 < time.time():
+                self.ttime = time.time()
+                self.draw_lines( ["STOP",str(time.time())] )
+            return
 
         if time.time()-0.12 > self.ttime:
             #if 1:
@@ -476,12 +495,25 @@ class UniversBuffer():
         self._next_frame(host)
 
         #if len(dmxframe) <= 512: #len(dmxframe_old):
-        if len(dmxframe) <= 512: #len(dmxframe_old):
-            for i,v in enumerate(dmxframe):
-                if dmxframe[i] != dmxframe_old[i]:
-                    update_flag += 1
-                    self.__universes_matrix[i] = self.__hosts.index(host)
-                dmx[i] = v
+        if cython:# "cython":
+            if len(dmxframe) <= 512: #len(dmxframe_old):
+                dmxnew = dmxframe
+                dmxold = dmxframe_old
+                matrix = self.__universes_matrix
+                hostid = self.__hosts.index(host)
+                x= cy.merge(dmxold,dmxnew,matrix,hostid)
+                dmx = list(x[0])
+                self.__universes_matrix = list(x[1])
+                update_flag = x[2]
+
+        else:
+            if len(dmxframe) <= 512: #len(dmxframe_old):
+                for i,v in enumerate(dmxframe):
+                    if dmxframe[i] != dmxframe_old[i]:
+                        update_flag += 1
+                        self.__universes_matrix[i] = self.__hosts.index(host)
+                    dmx[i] = v
+        
         
         self.__universes_flag[host].pop(0)
         self.__universes_flag[host].append( update_flag )
