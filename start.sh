@@ -1,2 +1,2 @@
 netns=$(ip netns identify $$)
-python3 ArtNetProcessor.py netns=$netns
+python3 ~/ASP/ArtNetProcessor.py netns=$netns
