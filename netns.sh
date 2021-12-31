@@ -24,5 +24,5 @@ ip netns
 echo "$2"
 if [ "x$2" = 'xbash' ]; then
     #ip netns exec "blue$nr" 'su - user' 
-    ip netns exec "blue$nr" su - user
+    ip netns exec "blue$nr" su - pi
 fi
