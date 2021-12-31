@@ -27,7 +27,11 @@ import sys
 if sys.version_info.major <= 2:
     print("exit Python3 is needet")
     sys.exit()
-sys.stdout.write("\x1b]2;DMX-SHEET 5\x07") # terminal title
+
+if "__file__" in dir():
+    sys.stdout.write("\x1b]2;"+str(__file__)+"\x07") # terminal title
+else:
+    sys.stdout.write("\x1b]2;"+str("__file__")+"\x07") # terminal title
 
 import string
 import time
