@@ -28,8 +28,14 @@ if sys.version_info.major <= 2:
     print("exit Python3 is needet")
     sys.exit()
 
+fn ="xx"
+sys.stdout.write("\x1b]2;"+str(fn)+"\x07") # terminal title
 if "__file__" in dir():
-    sys.stdout.write("\x1b]2;"+str(__file__)+"\x07") # terminal title
+    fn = __file__
+    if "/" in fn:
+        fn = fn.split("/")[-1]
+
+    sys.stdout.write("\x1b]2;"+str(fn)+"\x07") # terminal title
 else:
     sys.stdout.write("\x1b]2;"+str("__file__")+"\x07") # terminal title
 
@@ -341,7 +347,7 @@ class Window():
                             if v == 0:
                                 v = "+"
                             x += str(v).rjust(4," ")
-                            if (i+1) % 20 == 0:# and i:
+                            if (i+1) % 21 == 0:# and i:
                                 lines.append(x)
                                 x=""
                         if x:
