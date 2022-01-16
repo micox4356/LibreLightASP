@@ -347,7 +347,8 @@ class Window():
                             if v == 0:
                                 v = "+"
                             x += str(v).rjust(4," ")
-                            if (i+1) % 21 == 0:# and i:
+                            #if (i+1) % 21 == 0:# and i:
+                            if (i+1) % 20 == 0:# and i:
                                 lines.append(x)
                                 x=""
                         if x:
@@ -576,7 +577,7 @@ class HostBuffer():
         self.__universes = OrderedDict() # {} # 192.168.0.1 = [0]*512
         #self.update(host="localhost",univ=0,dmxframe=[6]*512)
         dmxframe = [0]*512
-        dmxframe[15] = 6
+        dmxframe[15] = -6
         #self.update(host="333.333.333.333",univ=8,dmxframe=dmxframe)
 
     def get_mtx(self,host="", univ=""):
