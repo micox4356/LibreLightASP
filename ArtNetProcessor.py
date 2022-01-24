@@ -35,7 +35,7 @@ if "__file__" in dir():
     if "/" in fn:
         fn = fn.split("/")[-1]
 
-    sys.stdout.write("\x1b]2;"+str(fn)+"\x07") # terminal title
+    sys.stdout.write("\x1b]2;"+str(fn)+" Beta 22.01"+"\x07") # terminal title
 else:
     sys.stdout.write("\x1b]2;"+str("__file__")+"\x07") # terminal title
 
