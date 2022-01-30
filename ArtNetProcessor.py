@@ -310,6 +310,8 @@ class Window():
         #print( "LOOP")
         host  = self.sel_host.get()
         univ2 = self.sel_univ.get()
+        #if type(univ2) is list:
+        #    univ2.sort()
 
         self.mode  = self.sel_mode.get()
         if self.mode == "stop":
@@ -440,6 +442,8 @@ class Window():
             lines.insert(0,tmp)
 
             tmp = ""
+            sel_univ_data = self.sel_univ.data
+            #sel_univ_data.sort()
             tmp += " univ:"+ (str(self.sel_univ.data))#.ljust(20," "))
             tmp += " list:"+ (str(self.sel_host.data))#.ljust(20," "))
             lines.insert(0,tmp)
@@ -890,6 +894,7 @@ class Pager(): #scroll thru list
         self.check()
     def get(self):
         self.check()
+        self.data.sort()
         if self.data:
              return self.data[self.index]
 
