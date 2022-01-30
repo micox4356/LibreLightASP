@@ -8,6 +8,10 @@ class ArtNetNode():
     """simple Object to generate ArtNet Network packages 
        works in Python2 and Python3  2021-12-05
 
+       (only basic implementation)
+
+       "Art-Net™ Designed by and Copyright Artistic Licence Holdings Ltd"
+       https://art-net.org.uk/
     """
     def __init__(self, to="10.10.10.255",univ=7,port=6454):
         try: 
