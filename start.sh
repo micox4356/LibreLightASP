@@ -1,2 +1,2 @@
 netns=$(ip netns identify $$)
-python3 ~/ASP/ArtNetProcessor.py netns=$netns
+python3 /opt/LibreLight/ASP/ArtNetProcessor.py netns=$netns
