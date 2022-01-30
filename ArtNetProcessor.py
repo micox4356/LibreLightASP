@@ -767,15 +767,20 @@ class Socket():
 # ============================================================   
 # miniartnet4.py =============================================   
 # ============================================================   
+
+
 import time
 import socket
 import struct
 import random
 
 class ArtNetNode():
-    """simple Object to generate ArtNet Network packages 
+    """simple Object to generate raw ArtNet like Network packages 
        works in Python2 and Python3  2021-12-05
+       (only basic implementation)
 
+       "Art-Net™ Designed by and Copyright Artistic Licence Holdings Ltd"
+       https://art-net.org.uk/
     """
     def __init__(self, to="10.10.10.255",univ=7,port=6454):
         try: 
