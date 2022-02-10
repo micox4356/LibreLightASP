@@ -116,22 +116,30 @@ class Window():
         #print( self.myscreen.getmaxyx() ) 
         self._inp=""
         self.cmd = []
-        if options.sendto:
-            self.mode="ltp"
-            self.mode="stop"
-        else:
-            self.mode="dmx"
         self.sel_host=Pager()
         self.sel_host.wrap=1
         self.sel_univ=Pager()
         self.sel_univ.wrap=1
         self.sel_mode=Pager()
         self.sel_mode.wrap=1
+
+        self.mode="dmx"
         if options.sendto:
-            self.sel_mode.data = ["stop","ltp","dmx","mtx","main"] # mtx = matrix
+            self.sel_mode.data = ["stop","stop","ltp","dmx","mtx","main"] # mtx = matrix
+            self.sel_mode.maxindex = len( self.sel_mode.data )-1
+            self.mode="stop"
+            #self.sel_mode.set(1) #stop
+            #self.sel_mode.prev() #stop
+            #self.sel_mode.prev() #stop
+            #self.sel_mode.prev() #stop
+            self.sel_mode.prev() #stop
         else:
             self.sel_mode.data = ["dmx","mtx","main"] # mtx = matrix
-        self.sel_mode.maxindex = len( self.sel_mode.data )-1
+            self.sel_mode.maxindex = len( self.sel_mode.data )-1
+
+
+        self.mode = self.sel_mode.get()
+
         self.ttime = time.time()
         self.univ2 = 0
         self.host =""
@@ -914,15 +922,16 @@ class Pager(): #scroll thru list
                 max = len(self.data)
         else:
             max = len(self.data)
+        max = self.maxindex
 
 
         if self.wrap:
-            if self.index >= max:
+            if self.index > max:
                 self.index = 0
             elif self.index < 0:
                 self.index = max-1
         else:
-            if self.index >= max:
+            if self.index > max:
                 self.index = max-1
             elif self.index < 0:
                 self.index = 0
