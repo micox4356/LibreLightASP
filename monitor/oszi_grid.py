@@ -155,7 +155,7 @@ import pygame
 import pygame.gfxdraw
 pygame.init()
 
-screen = pygame.display.set_mode((800, 300))
+screen = pygame.display.set_mode((800, 800))
 
 
 
@@ -182,6 +182,8 @@ class Trans():
 
 import copy
 import _thread as thread
+
+
 class E():
     def __init__(self):
         self.sdata = {}
@@ -192,12 +194,11 @@ class E():
         while 1:
             flag = 0
             while xsocket.poll():
-                poll_flag = 1
                 xx = xsocket.recive()
                 k = xx["host"] +":"+ str(xx["head"][6])
                 sdata[k] = xx
-                print(xx)
                 flag = 1
+
             if flag:
                 try:
                     self.lock.acquire()
@@ -215,18 +216,25 @@ class E():
         finally:
             self.lock.release()
 e = E()
-#thread.start_new_thread(e.loop,())
+thread.start_new_thread(e.loop,())
 T = Trans()
+import sys
+font = pygame.font.SysFont("FreeSans", 20) #,color=(255,0,0))
+font = pygame.font.SysFont("monospace", 14,"bold") #,color=(255,0,0))
+
 _x=0
+sdata={}
+grid_timer = time.time()
+lz = time.time()
 while running:
     x=int(_x)
     clock.tick(30)
     #screen.fill((0, 0, 0))
 
-    #sdata = e.get()
+    sdata = e.get()
     #print(sdata)
-    sdata={}
-    while xsocket.poll():
+    if 0:
+        #while xsocket.poll():
         #print(1)
         poll_flag = 1
         xx = xsocket.recive()
@@ -234,7 +242,7 @@ while running:
         sdata[k] = xx
         #print(xx)
         flag = 1
-
+    xsdata = copy.deepcopy(sdata)
     data = []
     if int(time.time()*10) % 20 == 0:
         for k in sdata:
@@ -243,8 +251,10 @@ while running:
         xx = sdata[k]
         if xx["host"] == '2.0.0.88' and xx["head"][6]==0:
             y = xx["dmx"][2-1]
+            y = xx["dmx"][21-1]
             data.append(y)
             y = xx["dmx"][3-1]
+            y = xx["dmx"][31-1]
             data.append(y)
             y = xx["dmx"][261-1]
             data.append(y)
@@ -260,7 +270,9 @@ while running:
                 pygame.event.post(pygame.event.Event(pygame.QUIT))
 
 
-    if _x > 800:
+    #if _x > 800:
+    if time.time() > lz:
+        lz = time.time()+2
         _x=0
         x=0
         rec = pygame.Rect(x+1,T.get_y(10),30,245) # clear balken
@@ -275,17 +287,50 @@ while running:
         pygame.gfxdraw.pixel(screen,x,T.get_y(0),(0,0,255))
         #rec = pygame.Rect(10+x,get_y(y),3,3) 
         #pygame.draw.rect(screen,(255,255,0),rec)
-        rec = pygame.Rect(x+4,T.get_y(0),20,-127) # clear balken
+        rec = pygame.Rect(x+4,T.get_y(0),20,-80) # clear balken
         pygame.draw.rect(screen,(c,210,110),rec)
-        rec = pygame.Rect(x+2,T.get_y(0),30,-127) # clear balken
+        rec = pygame.Rect(x+2,T.get_y(0),30,-80) # clear balken
         pygame.draw.rect(screen,(c,10,110),rec)
+        text = font.render( str(y), True, (0,0,0))
+        #screen.blit(text, ( x+5, T.get_y(100) ) )
+        #print( dir(pygame.draw))
+        #sys.exit()
 
         pygame.draw.circle(screen,(255,155,0),(x,T.get_y(y)),2)
         c+=50
         if c >255:
             c=255
         T.y-=265
+
+    if grid_timer < time.time():
+        #print("delta",round(grid_timer-time.time(),4))
+        grid_timer=time.time()+.015
+        for d in xsdata:
+            xx=sdata[d]
+            print(xx["head"],xx["host"])
+            if xx["host"] == '2.0.0.88' and xx["head"][6]==0:
+                rx=10
+                ry=T.get_y(200)
+                rec = pygame.Rect(rx,ry,800,600) # clear balken
+                pygame.draw.rect(screen,(0,10,210),rec)
+                line = []
+                for i,dmx in enumerate(xx["dmx"]):
+                    #dmx = xx["dmx"][1]
+                    text = font.render( str(dmx).rjust(3," "), True, (255,255,255))
+                    screen.blit(text, ( rx+10, ry+10 ) )
+                    #print(rx,ry,"dmx",dmx)
+                    #line.append(str(dmx).rjust(3," "))
+                    rx+=30
+                    #if rx > 600:
+
+                    if  (i+1) % 20 == 0:
+                        rx=10
+                        ry+=15
+                        
+                        #text = font.render( " ".join(line), True, (200,200,200))
+                        #line = []
+                        #screen.blit(text, ( rx+10, ry+10 ) )
     pygame.display.flip()
-    _x+=3.5
+    _x+=3.5*2
 
 

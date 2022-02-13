@@ -2,7 +2,7 @@
 
 while :
 do
-  python3 '/opt/LibreLight/ASP/monitor/oszi_sdl.py'
+  python3 '/opt/LibreLight/ASP/monitor/oszi_grid.py'
   PS1="X:"
   PS1="$PS1 $(ip netns identify $$)"
   export PS1
