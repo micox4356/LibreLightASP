@@ -41,4 +41,6 @@ print(cmd)
 cmd2=cmd.format(user=username,id=options.id,cmd=options.cmd)
 print(cmd2)
 os.system(cmd2)
+os.system("reset")
+os.system("echo 'reset ok'")
 
