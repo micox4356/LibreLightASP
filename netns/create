@@ -1,0 +1,31 @@
+#!/usr/bin/bash
+#x
+color="green_"
+nr="1$1"
+echo "arg: $1"
+if [ "x$1" = 'x' ]; then
+    echo "please enter a netns id 00-24"
+    exit 
+fi
+ip netns del "$color$nr"
+ip l del veth0$nr
+
+ip netns add "$color$nr"
+#ip netns list
+#ip link add veth0$nr type veth peer name veth1$nr
+ip link add veth0$nr type veth peer name veth1$nr netns "$color$nr"
+ip link set dev veth0$nr up
+ip netns exec "$color$nr" ip link set dev veth1$nr up
+ip link set veth0$nr master br0
+#ip link list
+#ip link set veth1$nr netns "$color$nr"
+
+ip netns exec "$color$nr" ip addr add 10.10.10.$nr/24 dev veth1$nr
+ip netns exec "$color$nr" ip addr add 10.0.25.$nr/24 dev veth1$nr
+ip netns exec "$color$nr" ip addr add 2.0.0.$nr/8 dev veth1$nr:1
+ip netns
+#echo "$2"
+#if [ "x$2" = 'xbash' ]; then
+#    #ip netns exec "$color$nr" 'su - user' 
+#    ip netns exec "$color$nr" su - pi
+#fi
