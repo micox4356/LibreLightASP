@@ -228,7 +228,7 @@ grid_timer = time.time()
 lz = time.time()
 while running:
     x=int(_x)
-    clock.tick(30)
+    clock.tick(15)
     #screen.fill((0, 0, 0))
 
     sdata = e.get()
@@ -307,8 +307,8 @@ while running:
         grid_timer=time.time()+.015
         for d in xsdata:
             xx=sdata[d]
-            print(xx["head"],xx["host"])
-            if xx["host"] == '2.0.0.88' and xx["head"][6]==0:
+            #print(xx["head"],xx["host"])
+            if xx["host"].startswith('2.0.0.') and xx["head"][6]==0:
                 rx=10
                 ry=T.get_y(200)
                 rec = pygame.Rect(rx,ry,800,600) # clear balken
