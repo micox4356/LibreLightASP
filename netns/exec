@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+#echo "name green_$1 command $2"
+
+#CMD="su user -c 'screen -d -m -S "'"'"$1"'"'" "'"'"$2"'"'"' "
+#echo "cmd: $CMD"
+#CMD2="sudo ip netns exec "'"'"green_$1"'"'" $CMD"
+#echo "cmd: $CMD2"
+import os
+import sys 
+import pwd
+
+#username = os.getlogin( ) 
+username = pwd.getpwuid(os.getuid())[0]
+print([username])
+if username == "root":
+    print( "do not execute this programm with root or sudo")
+    sys.exit()
+
+from optparse import OptionParser
+parser = OptionParser()
+parser.add_option("--id",  dest="id",
+                  help="set netns id = ip")
+
+parser.add_option("--cmd", dest="cmd",
+                  help="cmd to execute in network-namespace")
+(options, args) = parser.parse_args()
+print("option",options)
+#print( dir(parser))
+
+if options.id is None:
+    print("please set network-namespace --id=xx")
+    sys.exit()
+
+if options.cmd is None:
+    print("exec: please set --cmd=xxxx")
+    sys.exit()
+
+
+cmd="sudo /opt/netns/_exec --id=\"{id}\" --user=\"{user}\" --cmd=\"{cmd}\" "  # ok
+print(cmd)
+cmd2=cmd.format(user=username,id=options.id,cmd=options.cmd)
+print(cmd2)
+os.system(cmd2)
+
