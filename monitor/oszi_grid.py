@@ -155,7 +155,7 @@ import pygame
 import pygame.gfxdraw
 pygame.init()
 
-screen = pygame.display.set_mode((800, 800))
+screen = pygame.display.set_mode((650, 620))
 
 
 
@@ -219,8 +219,8 @@ e = E()
 thread.start_new_thread(e.loop,())
 T = Trans()
 import sys
-font = pygame.font.SysFont("FreeSans", 20) #,color=(255,0,0))
-font = pygame.font.SysFont("monospace", 14,"bold") #,color=(255,0,0))
+font = pygame.font.SysFont("FreeSans", 12) #,color=(255,0,0))
+#font = pygame.font.SysFont("monospace", 12,"bold") #,color=(255,0,0))
 
 _x=0
 sdata={}
@@ -249,6 +249,7 @@ while running:
             print(k)
     for k in sdata:
         xx = sdata[k]
+        #if xx["host"] == '10.10.10.88' and xx["head"][6]==0:
         if xx["host"] == '2.0.0.88' and xx["head"][6]==0:
             y = xx["dmx"][2-1]
             y = xx["dmx"][21-1]
@@ -284,7 +285,7 @@ while running:
     for d in data:
         y=d
         pygame.gfxdraw.pixel(screen,x,T.get_y(255),(255,0,0))
-        pygame.gfxdraw.pixel(screen,x,T.get_y(0),(0,0,255))
+        pygame.gfxdraw.pixel(screen,x,T.get_y(0),(10,10,25))
         #rec = pygame.Rect(10+x,get_y(y),3,3) 
         #pygame.draw.rect(screen,(255,255,0),rec)
         rec = pygame.Rect(x+4,T.get_y(0),20,-80) # clear balken
@@ -309,10 +310,10 @@ while running:
             xx=sdata[d]
             #print(xx["head"],xx["host"])
             if xx["host"].startswith('2.0.0.') and xx["head"][6]==0:
-                rx=10
+                rx=8
                 ry=T.get_y(200)
                 rec = pygame.Rect(rx,ry,800,600) # clear balken
-                pygame.draw.rect(screen,(0,10,210),rec)
+                pygame.draw.rect(screen,(20,20,20),rec)
                 line = []
                 for i,dmx in enumerate(xx["dmx"]):
                     #dmx = xx["dmx"][1]
@@ -320,12 +321,12 @@ while running:
                     screen.blit(text, ( rx+10, ry+10 ) )
                     #print(rx,ry,"dmx",dmx)
                     #line.append(str(dmx).rjust(3," "))
-                    rx+=30
+                    rx+=29
                     #if rx > 600:
 
                     if  (i+1) % 20 == 0:
-                        rx=10
-                        ry+=15
+                        rx=8
+                        ry+=12
                         
                         #text = font.render( " ".join(line), True, (200,200,200))
                         #line = []
