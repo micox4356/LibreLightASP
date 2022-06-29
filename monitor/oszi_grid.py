@@ -164,7 +164,7 @@ pygame.display.set_caption("pygame: DMX OSZI")
 pygame.mouse.set_visible(1)
 pygame.key.set_repeat(1, 30)
 clock = pygame.time.Clock()
-#sf = pygame.Surface(300,300)
+
 pygame.init() 
 
 x=0
@@ -220,7 +220,6 @@ thread.start_new_thread(e.loop,())
 T = Trans()
 import sys
 font = pygame.font.SysFont("FreeSans", 12) #,color=(255,0,0))
-#font = pygame.font.SysFont("monospace", 12,"bold") #,color=(255,0,0))
 
 _x=0
 sdata={}
@@ -229,13 +228,9 @@ lz = time.time()
 while running:
     x=int(_x)
     clock.tick(15)
-    #screen.fill((0, 0, 0))
 
     sdata = e.get()
-    #print(sdata)
     if 0:
-        #while xsocket.poll():
-        #print(1)
         poll_flag = 1
         xx = xsocket.recive()
         k = xx["host"] +":"+ str(xx["head"][6])
@@ -250,6 +245,7 @@ while running:
     for k in sdata:
         xx = sdata[k]
         #if xx["host"] == '10.10.10.88' and xx["head"][6]==0:
+        univ = xx["head"][6] /512
         if xx["host"] == '2.0.0.88' and xx["head"][6]==0:
             y = xx["dmx"][2-1]
             y = xx["dmx"][21-1]
@@ -270,8 +266,6 @@ while running:
             if event.key == pygame.K_ESCAPE:
                 pygame.event.post(pygame.event.Event(pygame.QUIT))
 
-
-    #if _x > 800:
     if time.time() > lz:
         lz = time.time()+2
         _x=0
@@ -279,23 +273,18 @@ while running:
         rec = pygame.Rect(x+1,T.get_y(10),30,245) # clear balken
         pygame.draw.rect(screen,(10,10,0),rec)
 
-        #screen.fill((0, 0, 0))
     T.y=-260
     c=0
     for d in data:
         y=d
         pygame.gfxdraw.pixel(screen,x,T.get_y(255),(255,0,0))
         pygame.gfxdraw.pixel(screen,x,T.get_y(0),(10,10,25))
-        #rec = pygame.Rect(10+x,get_y(y),3,3) 
-        #pygame.draw.rect(screen,(255,255,0),rec)
+
         rec = pygame.Rect(x+4,T.get_y(0),20,-80) # clear balken
         pygame.draw.rect(screen,(c,210,110),rec)
         rec = pygame.Rect(x+2,T.get_y(0),30,-80) # clear balken
         pygame.draw.rect(screen,(c,10,110),rec)
         text = font.render( str(y), True, (0,0,0))
-        #screen.blit(text, ( x+5, T.get_y(100) ) )
-        #print( dir(pygame.draw))
-        #sys.exit()
 
         pygame.draw.circle(screen,(255,155,0),(x,T.get_y(y)),2)
         c+=50
@@ -304,33 +293,48 @@ while running:
         T.y-=265
 
     if grid_timer < time.time():
-        #print("delta",round(grid_timer-time.time(),4))
         grid_timer=time.time()+.015
         for d in xsdata:
             xx=sdata[d]
-            #print(xx["head"],xx["host"])
-            if xx["host"].startswith('2.0.0.') and xx["head"][6]==0:
-                rx=8
-                ry=T.get_y(200)
-                rec = pygame.Rect(rx,ry,800,600) # clear balken
-                pygame.draw.rect(screen,(20,20,20),rec)
-                line = []
-                for i,dmx in enumerate(xx["dmx"]):
-                    #dmx = xx["dmx"][1]
-                    text = font.render( str(dmx).rjust(3," "), True, (255,255,255))
-                    screen.blit(text, ( rx+10, ry+10 ) )
-                    #print(rx,ry,"dmx",dmx)
-                    #line.append(str(dmx).rjust(3," "))
-                    rx+=29
-                    #if rx > 600:
+            univ = xx["head"][6] //256 #/ 255
 
-                    if  (i+1) % 20 == 0:
-                        rx=8
-                        ry+=12
+            if xx["host"].startswith('2.0.0.'):
+                if univ == 0:
+                    rx=8
+                    ry=10 
+                    rec = pygame.Rect(rx,ry,600,600) # clear balken
+                    pygame.draw.rect(screen,(20,20,20),rec)
+                    text = font.render( str(univ).rjust(3," "), True, (255,255,255))
+                    screen.blit(text, ( rx-10, ry ) )
+                    line = []
+                    for i,dmx in enumerate(xx["dmx"]):
+                        text = font.render( str(dmx).rjust(3," "), True, (255,255,255))
+                        screen.blit(text, ( rx+10, ry+10 ) )
+
+                        rx+=29
+
+                        if  (i+1) % 20 == 0:
+                            rx=8
+                            ry+=11
+
+                elif univ == 1:
+                    rx=8
+                    ry=310
+                    rec = pygame.Rect(rx,ry,600,600) # clear balken
+                    pygame.draw.rect(screen,(10,30,10),rec)
+                    text = font.render( str(univ).rjust(3," "), True, (255,255,255))
+                    screen.blit(text, ( rx-10, ry ) )
+                    line = []
+                    for i,dmx in enumerate(xx["dmx"]):
+                        text = font.render( str(dmx).rjust(3," "), True, (255,200,255))
+                        screen.blit(text, ( rx+10, ry+10 ) )
+
+                        rx+=29
+
+                        if  (i+1) % 20 == 0:
+                            rx=8
+                            ry+=11
                         
-                        #text = font.render( " ".join(line), True, (200,200,200))
-                        #line = []
-                        #screen.blit(text, ( rx+10, ry+10 ) )
     pygame.display.flip()
     _x+=3.5*2
 
