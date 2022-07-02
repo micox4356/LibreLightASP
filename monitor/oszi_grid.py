@@ -155,7 +155,7 @@ import pygame
 import pygame.gfxdraw
 pygame.init()
 
-screen = pygame.display.set_mode((650, 620))
+screen = pygame.display.set_mode((780, 610))
 
 
 
@@ -228,6 +228,7 @@ lz = time.time()
 while running:
     x=int(_x)
     clock.tick(15)
+    #clock.tick(225)
 
     sdata = e.get()
     if 0:
@@ -245,13 +246,15 @@ while running:
     for k in sdata:
         xx = sdata[k]
         #if xx["host"] == '10.10.10.88' and xx["head"][6]==0:
-        univ = xx["head"][6] /512
-        if xx["host"] == '2.0.0.88' and xx["head"][6]==0:
+        univ = xx["head"][6] /256
+        print(univ,"---...---")
+        if xx["host"] == '2.0.0.88' and univ == 1:# xx["head"][6]==0:
             y = xx["dmx"][2-1]
             y = xx["dmx"][21-1]
             data.append(y)
             y = xx["dmx"][3-1]
             y = xx["dmx"][31-1]
+            y = xx["dmx"][142-1]
             data.append(y)
             y = xx["dmx"][261-1]
             data.append(y)
@@ -267,7 +270,7 @@ while running:
                 pygame.event.post(pygame.event.Event(pygame.QUIT))
 
     if time.time() > lz:
-        lz = time.time()+2
+        lz = time.time()+6
         _x=0
         x=0
         rec = pygame.Rect(x+1,T.get_y(10),30,245) # clear balken
@@ -290,17 +293,17 @@ while running:
         c+=50
         if c >255:
             c=255
-        T.y-=265
+        T.y-=275
 
     if grid_timer < time.time():
-        grid_timer=time.time()+.015
+        grid_timer=time.time()+.0215
         for d in xsdata:
             xx=sdata[d]
             univ = xx["head"][6] //256 #/ 255
 
             if xx["host"].startswith('2.0.0.'):
                 if univ == 0:
-                    rx=8
+                    rx=308
                     ry=10 
                     rec = pygame.Rect(rx,ry,600,600) # clear balken
                     pygame.draw.rect(screen,(20,20,20),rec)
@@ -314,7 +317,7 @@ while running:
                         rx+=29
 
                         if  (i+1) % 20 == 0:
-                            rx=8
+                            rx=308
                             ry+=11
 
                 elif univ == 1:
@@ -336,6 +339,7 @@ while running:
                             ry+=11
                         
     pygame.display.flip()
-    _x+=3.5*2
+    #_x+=3.5*2
+    _x+=1.5*2
 
 
