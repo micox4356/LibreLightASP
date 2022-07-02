@@ -248,7 +248,7 @@ while running:
         #if xx["host"] == '10.10.10.88' and xx["head"][6]==0:
         univ = xx["head"][6] /256
         print(univ,"---...---")
-        if xx["host"] == '2.0.0.88' and univ == 1:# xx["head"][6]==0:
+        if xx["host"].startswith('2.0.0.') and univ == 1:# xx["head"][6]==0:
             y = xx["dmx"][2-1]
             y = xx["dmx"][21-1]
             data.append(y)
