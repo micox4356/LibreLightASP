@@ -246,8 +246,8 @@ while running:
     for k in sdata:
         xx = sdata[k]
         #if xx["host"] == '10.10.10.88' and xx["head"][6]==0:
-        univ = xx["head"][6] /256
-        print(univ,"---...---")
+        univ = int(xx["head"][6] /256)
+        #print(univ,"---...---")
         if xx["host"].startswith('2.0.0.') and univ == 1:# xx["head"][6]==0:
             y = xx["dmx"][2-1]
             y = xx["dmx"][21-1]
