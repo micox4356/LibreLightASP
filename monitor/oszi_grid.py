@@ -335,10 +335,17 @@ class GRID():
                             ry+=11
                             
 
+_ips = {}
 def print_ips(sdata):
     if int(time.time()*10) % 20 == 0:
+
         for k in sdata:
-            print(k)
+            if k in _ips:
+                _ips[k] += 1
+            else:
+                _ips[k] = 0
+            print(k.ljust(15," "),_ips[k])
+        print()
 
 
 
