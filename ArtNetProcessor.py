@@ -144,6 +144,8 @@ class Window():
         self.univ2 = 0
         self.host =""
         self.ohost = HostBuffer() # as default
+        self.ohost.update(host="Win-"+str(options.sendto),univ=0,dmxframe=[0]*512) # dummy input
+
         self.__reinit_time = time.time()
     def dir(self):
         return dir(self.myscreen)
@@ -893,6 +895,7 @@ class Pager(): #scroll thru list
         self.index = 0
         self.wrap = 0
         self.maxindex = 0 
+
     def append(self,val):
         self.data.append(val)
         self.check()
@@ -900,6 +903,7 @@ class Pager(): #scroll thru list
     def set(self,nr):
         self.index = nr
         self.check()
+
     def get(self):
         self.check()
         self.data.sort()
@@ -910,29 +914,32 @@ class Pager(): #scroll thru list
         self.index += 1
         self.check(flag=1)
         return self.get()
+
     def prev(self):
         self.index -= 1
         self.check(flag=1)
         return self.get()
+
     def check(self,flag=0):
         if flag:
             if self.maxindex and self.maxindex <= len(self.data):
-                max = self.maxindex
+                _max = self.maxindex
             else:
-                max = len(self.data)
+                _max = len(self.data)
         else:
-            max = len(self.data)
-        max = self.maxindex
+            _max = len(self.data)
+        #_max = self.maxindex
+        self.maxindex = _max
 
 
         if self.wrap:
-            if self.index > max:
+            if self.index >= _max:
                 self.index = 0
             elif self.index < 0:
-                self.index = max-1
+                self.index = _max-1
         else:
-            if self.index > max:
-                self.index = max-1
+            if self.index >= _max:
+                self.index = _max-1
             elif self.index < 0:
                 self.index = 0
 
@@ -967,6 +974,8 @@ class Main():
                 
         #artnet_out = ArtNetNode(to="10.0.25.255")
         artnet_out = ArtNetNode(to=options.sendto)
+
+        ohost.update(host="Main-"+str(options.sendto),univ=0,dmxframe=[0]*512) # dummy input
         #artnet_out._test_frame()
         if options.testuniv:
             artnet = ArtNetNode(univ=options.testuniv)
@@ -1011,7 +1020,7 @@ class Main():
                             x["univ"] = int(options.inmap )
                         except TypeError:
                             pass
-                    ohost.update(x["host"],x["univ"],x["dmx"])     
+                    ohost.update(host=x["host"],univ=x["univ"],dmxframe=x["dmx"])     
 
                 screen.sel_univ.data = ohost.univs()
                 screen.sel_host.data = ohost.hosts()
@@ -1024,7 +1033,7 @@ class Main():
                     for i in ohost_buf:
                         for j in ohost_buf[i]:
                              dmx=ohost_buf[i][j]
-                             ohost.update(i,j,dmx) # update univ_data from input buffer    
+                             ohost.update(host=i,univ=j,dmxframe=dmx) # update univ_data from input buffer    
                     ohost_buf = {} # clear package buffer
 
                 if send_timer.check() and options.sendto:
