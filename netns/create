@@ -16,7 +16,43 @@ ip netns add "$color$nr"
 ip link add veth0$nr type veth peer name veth1$nr netns "$color$nr"
 ip link set dev veth0$nr up
 ip netns exec "$color$nr" ip link set dev veth1$nr up
-ip link set veth0$nr master br0
+
+# ==================== check bridge
+br="" # bridge for artnet
+
+_br="br0"
+ip l l $_br
+R="$?"
+
+if [ $R -eq 0 ] ; then
+    br="$_br"
+fi
+
+
+_br="vmbr0"
+ip l l $_br
+R="$?"
+
+if [ $R -eq 0 ] ; then
+    br="$_br"
+fi
+
+if [ "x$br" = "x" ] ; then
+    echo "============================================"
+    echo "ERROR Bridge interface is not proberly setup"
+    echo "please use br0 on debian or vmbr0 on proxmox"
+    echo "to bind ArtNet ip addresse "
+    echo " 10.10.10.x/24 2.0.0.x/8"
+    echo "============================================"
+    exit 123
+else
+    echo "============================================"
+    echo "brige is: $br"
+fi
+# ==================== check bridge end
+
+
+ip link set veth0$nr master $br
 #ip link list
 #ip link set veth1$nr netns "$color$nr"
 
