@@ -26,7 +26,7 @@ print(options.sendto)
 
 
 def unpack_art_dmx(data):
-    dmx = []
+    dmx = ["x"]*512
     for i in range(len(data[18:]) ):
         x=data[18+i]
         #print("x",x)
@@ -34,7 +34,7 @@ def unpack_art_dmx(data):
         #x=struct.unpack( b'!B',data[18+i])
         #print( "data",b'!B', data[18+i],x)
         #x=x[0]
-        dmx += [x]
+        dmx[i] = x
     return dmx
 
         
