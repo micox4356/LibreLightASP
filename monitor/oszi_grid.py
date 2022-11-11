@@ -153,7 +153,6 @@ class Socket():
 x=0
 y=0
 running = True
-xsocket = Socket()
 
 import pygame
 import pygame.gfxdraw
@@ -164,7 +163,7 @@ screen = pygame.display.set_mode((780, 610))
 
 
 
-pygame.display.set_caption("pygame: DMX OSZI")
+pygame.display.set_caption("pygame: DMX OSZI 2.01")
 pygame.mouse.set_visible(1)
 pygame.key.set_repeat(1, 30)
 clock = pygame.time.Clock()
@@ -183,17 +182,18 @@ import copy
 import _thread as thread
 
 
-class E():
+class ArtNetRead():
     def __init__(self):
         self.sdata = {}
+        self.xsocket = Socket()
         self.lock = thread.allocate_lock()
     def loop(self):
         sdata = {}
         print("loop")
         while 1:
             flag = 0
-            while xsocket.poll():
-                xx = xsocket.recive()
+            while self.xsocket.poll():
+                xx = self.xsocket.recive()
                 k = xx["host"] +":"+ str(xx["head"][6])
                 sdata[k] = xx
                 flag = 1
@@ -214,7 +214,8 @@ class E():
             return x
         finally:
             self.lock.release()
-e = E()
+e = ArtNetRead()
+
 thread.start_new_thread(e.loop,())
 T = Trans()
 import sys
