@@ -182,12 +182,16 @@ oszi_a = OSZI()
 
 import artnet_read 
 
+
+e = artnet_read.ArtNetRead()
+thread.start_new_thread(e.loop,())
+
 while running:
     clock.tick(15)
     #clock.tick(225)
     #print(dir(e),e)
     #exit()
-    sdata = artnet_read.e.get()
+    sdata = e.get()
 
     xsdata = copy.deepcopy(sdata)
 

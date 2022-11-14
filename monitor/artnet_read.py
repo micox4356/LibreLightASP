@@ -184,6 +184,9 @@ class ArtNetRead():
             return x
         finally:
             self.lock.release()
-e = ArtNetRead()
 
-thread.start_new_thread(e.loop,())
+
+
+if __name__ == "__main__":
+    e = ArtNetRead()
+    thread.start_new_thread(e.loop,())
