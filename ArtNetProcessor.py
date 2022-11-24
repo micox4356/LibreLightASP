@@ -69,6 +69,16 @@ if cython:
         import cy.ArtNetProcessor_cy as cy
 #print(dir())
 #input()
+# ============================================================   
+# memcach =========================================   
+# ============================================================   
+import memcache
+try:
+    mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+    mc.set("dmx-1", [1]*512)
+except Exception as e:
+    print("EXC",e)
+
 
 from collections import OrderedDict
 
@@ -1054,6 +1064,11 @@ class Main():
                         #print( xl )
                         #print( len(ltp) ,ltp[:20])
                         #print( "univ", univ )
+                        try:
+                            mc.set("dmx-{}".format(univ), ltp)
+                        except Exception as e:
+                            print("Exception",e)
+
                         ltp[511] = int(univ)
                         artnet_out.univ=int(univ)
                         artnet_out.send(ltp)
