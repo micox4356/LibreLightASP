@@ -72,12 +72,13 @@ if cython:
 # ============================================================   
 # memcach =========================================   
 # ============================================================   
-import memcache
+mc = None
 try:
+    import memcache
     mc = memcache.Client(['127.0.0.1:11211'], debug=0)
     mc.set("dmx-1", [1]*512)
 except Exception as e:
-    print("EXC",e)
+    print("Exception",e)
 
 
 from collections import OrderedDict
@@ -1067,7 +1068,8 @@ class Main():
                         try:
                             mc.set("dmx-{}".format(univ), ltp)
                         except Exception as e:
-                            print("Exception",e)
+                            pass#
+                            #print("Exception",e)
 
                         ltp[511] = int(univ)
                         artnet_out.univ=int(univ)
