@@ -58,6 +58,7 @@ parser.add_option("", "--inmap", dest="inmap",
 #                  action="store_false", dest="verbose", default=True,
 #                  help="don't print status messages to stdout")
 
+
 (options, args) = parser.parse_args()
 print("option",options)
 print(options.sendto)
@@ -67,6 +68,9 @@ if cython:
         import cy.ArtNetProcessor_cy_pi as cy
     else:
         import cy.ArtNetProcessor_cy as cy
+
+from collections import OrderedDict
+
 #print(dir())
 #input()
 # ============================================================   
@@ -80,8 +84,33 @@ try:
 except Exception as e:
     print("Exception",e)
 
+def memcachd_index_clear():
+    _index = {}
+    try:
+        mc.set("index",_index)
+    except Exception as e:
+        print("memcach exception",e)
 
-from collections import OrderedDict
+memcachd_index_clear()
+
+def memcachd_index(key,val=""):
+    try:
+        _index =  mc.get("index")
+        #print("A",_index)
+        if type(_index) is type(None):
+            _index = {}
+        #print("A",_index)
+
+        if key in _index:
+            _index[key] += 1
+        else:
+            _index[key] = 1
+        mc.set("index",_index)
+    except Exception as e:
+        print("memcach exception",e)
+
+
+
 
 # ============================================================   
 # Text Grafik Curses =========================================   
@@ -1022,7 +1051,16 @@ class Main():
                         ohost_buf[x["host"]][x["univ"]] = {}
 
                     ohost_buf[x["host"]][x["univ"]] = x["dmx"] #write into buffer to prevent package latency encreasing
+
+                    try:
+                        k = "{}:{}".format(x["host"],x["univ"])
+                        mc.set(k, x["dmx"])  # "dmx-{}".format(univ), ltp)
+                        memcachd_index(key=k)
+                    except Exception as e:
+                        print("exception:",e)
+                        time.sleep(.1)
                     #ohost.update(x["host"],x["univ"],x["dmx"])     
+
                 if 0:#ysocket.poll():
                     poll_flag = 1
                     x = ysocket.recive()
@@ -1066,7 +1104,9 @@ class Main():
                         #print( len(ltp) ,ltp[:20])
                         #print( "univ", univ )
                         try:
-                            mc.set("dmx-{}".format(univ), ltp)
+                            k="ltp-out-{}".format(univ)
+                            mc.set(k,ltp)
+                            memcachd_index(key=k)
                         except Exception as e:
                             pass#
                             #print("Exception",e)
