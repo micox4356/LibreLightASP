@@ -1104,7 +1104,7 @@ class Main():
                         #print( len(ltp) ,ltp[:20])
                         #print( "univ", univ )
                         try:
-                            k="ltp-out-{}".format(univ)
+                            k="ltp-out:{}".format(univ)
                             mc.set(k,ltp)
                             memcachd_index(key=k)
                         except Exception as e:
