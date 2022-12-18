@@ -32,12 +32,13 @@ import pygame
 import pygame.gfxdraw
 pygame.init()
 
-screen = pygame.display.set_mode((780, 610))
+#screen = pygame.display.set_mode((780, 610))
+screen = pygame.display.set_mode((560, 610))
 
 
 
 
-pygame.display.set_caption("pygame: DMX OSZI 2.01")
+pygame.display.set_caption("pygame: DMX OSZI 22.12")
 pygame.mouse.set_visible(1)
 pygame.key.set_repeat(1, 30)
 clock = pygame.time.Clock()
@@ -66,7 +67,7 @@ class OSZI():
         self.sdata={}
         self.lz = time.time()
         self.c=0
-    def draw(self,screen,data):#,c,x,y,T):
+    def draw(self,screen,data,univ=0,label="ABCDEFGHIJK"):
         x=int(self._x)
 
         if time.time() > self.lz:
@@ -78,7 +79,10 @@ class OSZI():
 
         T.y=-260
         c=0
+        i = 0
         for d in data:
+
+
             y=d
             pygame.gfxdraw.pixel(screen,x,T.get_y(255),(255,0,0))
             pygame.gfxdraw.pixel(screen,x,T.get_y(0),(10,10,25))
@@ -90,14 +94,26 @@ class OSZI():
             text = font.render( str(y), True, (0,0,0))
 
             pygame.draw.circle(screen,(255,155,0),(x,T.get_y(y)),2)
+
+            try:
+                rec = pygame.Rect(0,T.get_y(-20) ,50,12) 
+                pygame.draw.rect(screen,(20,20,20),rec)
+                text = font.render( "DMX:{}".format(int(label[i])+1), True, (255,255,255))
+                screen.blit(text, ( 0,T.get_y(-20) ) )
+            except:pass
+            
             c+=50
             if c >255:
                 c=255
             T.y-=275
+            i+=1
         #_x+=3.5*2
         self._x+=1.5*2
 
+NR = 0
+NR2 =0
 def read_event():
+    global NR,NR2
     running = True
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -107,32 +123,87 @@ def read_event():
             print(event.type)
             if event.key == pygame.K_ESCAPE:
                 pygame.event.post(pygame.event.Event(pygame.QUIT))
+
+
+        try:
+            print(event.dict ) #event.button)
+            if event.type == 5:
+                if "button" in event.dict and event.dict["button"] == 3:  #event.button)
+                    NR += 1
+                    if NR > 12:
+                        NR = 0
+                if "button" in event.dict and event.dict["button"] == 1:  #event.button)
+                    NR -= 1
+                    if NR < 0:
+                        NR = 12
+
+                if "button" in event.dict and event.dict["button"] == 4:  #event.button)
+                    NR2 += 1
+                    if NR2 > 512-1:
+                        NR2 = 0
+                if "button" in event.dict and event.dict["button"] == 5:  #event.button)
+                    NR2 -= 1
+                    if NR2 < 0:
+                        NR2 = 512-1
+
+        except Exception as e:
+            print(e)
+
     return running 
 
+NR = 0
+NR2= 0
 
 class GRID():
     def __init__(self):
         self.grid_timer = time.time()
 
-    def draw(self,xsdata):
+    def draw(self,xsdata,univ=0,x=0,y=250):
+        rx = x
+        ry = y
         grid_timer = self.grid_timer
 
         if grid_timer > time.time():
             return 
 
+
+        x2 = 310
+        y2 = 10
+        rec = pygame.Rect(x2,y2,200,450) # clear balken
+        pygame.draw.rect(screen,(20,40,20),rec)
+
+        for d in xsdata:
+            xx=sdata[d]
+            _univ = xx["head"][6] //256 #/ 255
+
+            text = font.render( "HOST: {}".format(xx["host"]), True, (255,255,255))
+            screen.blit(text, ( x2+10, y2+10 ) )
+
+            text = font.render( ": {}".format(_univ), True, (255,255,255))
+            screen.blit(text, ( x2+130, y2+10 ) )
+            #x2 += 40
+            y2 += 14
+
+        rec = pygame.Rect(rx,ry,600,600) # clear balken
+        pygame.draw.rect(screen,(20,20,20),rec)
+        text = font.render( "univ:{}".format(univ), True, (255,255,255))
+        screen.blit(text, ( rx+20, ry+10 ) )
+        ry+=22
+
         grid_timer=time.time()+.0215
         for d in xsdata:
             xx=sdata[d]
-            univ = xx["head"][6] //256 #/ 255
+            _univ = xx["head"][6] //256 #/ 255
+
 
             if xx["host"].startswith('2.0.0.'):
-                if univ == 0:
-                    rx=308
-                    ry=10 
+
+                if univ == _univ: # == 0:
+                    #rx=308
+                    #ry=10 
                     rec = pygame.Rect(rx,ry,600,600) # clear balken
                     pygame.draw.rect(screen,(20,20,20),rec)
-                    text = font.render( str(univ).rjust(3," "), True, (255,255,255))
-                    screen.blit(text, ( rx-10, ry ) )
+
                     line = []
                     for i,dmx in enumerate(xx["dmx"]):
                         text = font.render( str(dmx).rjust(3," "), True, (255,255,255))
@@ -141,26 +212,9 @@ class GRID():
                         rx+=29
 
                         if  (i+1) % 20 == 0:
-                            rx=308
-                            ry+=11
+                            rx=x
+                            ry+=12
 
-                elif univ == 1:
-                    rx=8
-                    ry=310
-                    rec = pygame.Rect(rx,ry,600,600) # clear balken
-                    pygame.draw.rect(screen,(10,30,10),rec)
-                    text = font.render( str(univ).rjust(3," "), True, (255,255,255))
-                    screen.blit(text, ( rx-10, ry ) )
-                    line = []
-                    for i,dmx in enumerate(xx["dmx"]):
-                        text = font.render( str(dmx).rjust(3," "), True, (255,200,255))
-                        screen.blit(text, ( rx+10, ry+10 ) )
-
-                        rx+=29
-
-                        if  (i+1) % 20 == 0:
-                            rx=8
-                            ry+=11
                             
 
 _ips = {}
@@ -197,13 +251,17 @@ while running:
 
     print_ips(sdata)
 
-    data = artnet_read.get_value(sdata,univ=1,dmx=[21,142,261,263])
+    _filter = [NR2,NR2+1,NR2+2] #,NR2+4]
+    try:
+        data = artnet_read.get_value(sdata,univ=NR,dmx=_filter)
+    except:
+        data = [0,0,0,0]
 
     running = read_event()
 
-    oszi_a.draw(screen,data) #,c,x,y,T)
+    oszi_a.draw(screen,data,label=_filter) 
 
-    grid_a.draw(xsdata)
+    grid_a.draw(xsdata,univ=NR,y=230)
 
     pygame.display.flip()
 
