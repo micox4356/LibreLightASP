@@ -1111,7 +1111,7 @@ class Main():
                             pass#
                             #print("Exception",e)
 
-                        ltp[511] = int(univ)
+                        #ltp[511] = int(univ) # set uni nr to last dmx ... testing only
                         artnet_out.univ=int(univ)
                         artnet_out.send(ltp)
                         #for j in info[i]:
